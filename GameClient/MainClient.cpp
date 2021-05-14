@@ -27,8 +27,9 @@ int main()
 	chattingText.setFillColor(sf::Color(0, 160, 0));
 	chattingText.setStyle(sf::Text::Bold);
 
-
+	
 	sf::Text text(mensaje, font, 14);
+
 	text.setFillColor(sf::Color(0, 160, 0));
 	text.setStyle(sf::Text::Bold);
 	text.setPosition(0, 560);

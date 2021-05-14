@@ -6,8 +6,9 @@
 class UDPSocket
 {
 	sf::UdpSocket* udpSocket;
-	sf::Socket::Status udpStatus;
+	
 public:
+	sf::Socket::Status udpStatus;
 	UDPSocket();
 	UDPSocket(sf::UdpSocket* _udpSocket);
 	~UDPSocket();
