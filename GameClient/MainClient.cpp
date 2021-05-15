@@ -22,7 +22,7 @@ int main()
 	}
 
 	sf::String mensaje = " >";
-	//Fran mongolo
+	
 	sf::Text chattingText(mensaje, font, 14);
 	chattingText.setFillColor(sf::Color(0, 160, 0));
 	chattingText.setStyle(sf::Text::Bold);

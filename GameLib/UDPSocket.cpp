@@ -16,7 +16,7 @@ UDPSocket::~UDPSocket()
 
 unsigned short UDPSocket::GetLocalPort()
 {
-    return 0;
+    return 50000;
 }
 
 

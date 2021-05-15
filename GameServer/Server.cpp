@@ -16,6 +16,13 @@ bool Server::IsClientInMap(unsigned short port)
 	return false;
 }
 
+void Server::SendMessage2AllClients(unsigned short port,sf::IpAddress ip, sf::Packet packet)
+{
+	for (std::map<unsigned short, PlayerInfo>::iterator it = this->clients.begin();it != clients.end();it++) {
+		udpSocket->Send(packet, ip, port);
+
+	}
+}
 void Server::ServerLoop()
 {
 
@@ -30,10 +37,7 @@ void Server::ServerLoop()
 			if (!this->IsClientInMap(port)) {
 				PlayerInfo playerInfo;
 				clients.insert(std::pair<unsigned int, PlayerInfo>(port, playerInfo));
-				for (std::map<unsigned short, PlayerInfo>::iterator it = clients.begin();it != clients.end();it++) {
-					udpSocket->Send(packet, ip, port);
-					
-				}
+				SendMessage2AllClients(port, ip, packet);
 			}
 		}
 		else {

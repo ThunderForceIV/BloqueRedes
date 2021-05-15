@@ -8,6 +8,6 @@ class Client
 public:
 	Client();
 	~Client();
-	
+	void ClientLoop();
 };
 
