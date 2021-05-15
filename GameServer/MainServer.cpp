@@ -1,10 +1,10 @@
 #pragma once
-#include <iostream>
-
+#include "Server.h"
 
 int main()
 {
-	
+	Server servidor;
+	servidor.ServerLoop();
 
 	return 0;
 

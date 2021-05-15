@@ -43,3 +43,4 @@ sf::Socket::Status UDPSocket::Bind(unsigned short port)
     this->udpStatus = udpSocket->bind(port);
     return udpStatus;
 }
+

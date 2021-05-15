@@ -1,8 +1,6 @@
 #pragma once
 #include "UDPSocket.h"
 #include "PlayerInfo.h"
-#include <map>
-#include <iostream> 
 class Server
 {
 	UDPSocket * udpSocket;

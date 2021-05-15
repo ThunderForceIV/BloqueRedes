@@ -2,6 +2,9 @@
 #include <SFML\Network.hpp>
 #include <mutex>
 #include <string>
+#include <SFML\Graphics.hpp>
+#include <iostream>
+#include <map>
 
 class UDPSocket
 {
