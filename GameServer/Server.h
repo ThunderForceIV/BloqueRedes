@@ -12,6 +12,7 @@ public:
 	~Server();
 	bool IsClientInMap(unsigned short checkPort);
 	void SendMessage2AllClients(std::string message, unsigned short port);
+	void RecieveClients();
 	void ServerLoop();
 };
 

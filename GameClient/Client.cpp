@@ -56,16 +56,24 @@ void Client::ConnectionThread() {
 	sf::IpAddress ip = sf::IpAddress::LocalHost;
 	unsigned short port = SERVER_PORT;//Modificar este magic number
 
-	this->clientSalt = MAX_64BITS;
+	this->clientSalt = rand()%MAX_64BITS;
 	packet << HEADER_PLAYER::HELLO;
+	while(true){
 	udpSocket->udpStatus = udpSocket->Send(packet, ip, port);
+	}
 }
 void Client::ClientLoop()
 {
-	std::thread tRecieve(&Client::RecievingThread,this);
-	tRecieve.detach();
-	std::thread tSend(&Client::SendingThread, this);
-	tSend.detach();
+	std::thread tConnection(&Client::ConnectionThread, this);
+	tConnection.detach();
+
+	//Cuando este conectado hace lo siguiente
+	if (false) {
+		std::thread tRecieve(&Client::RecievingThread, this);
+		tRecieve.detach();
+		std::thread tSend(&Client::SendingThread, this);
+		tSend.detach();
+	}
 	while (true)
 	{
 

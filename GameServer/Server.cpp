@@ -29,6 +29,37 @@ void Server::SendMessage2AllClients(std::string message, unsigned short port)
 
 	packet.clear();
 }
+
+void Server::RecieveClients() {
+	int recieverInt;
+	sf::Packet packet;
+	sf::IpAddress ip;
+	unsigned short port;
+	while (true) {
+		udpSocket->udpStatus = udpSocket->Receive(packet, ip, port);
+		packet >> recieverInt;
+		
+		switch (recieverInt)
+		{
+		case HEADER_PLAYER::HELLO:
+			//Creamos el serversalt
+			//Preguntar donde guardar el client y como
+			//packet << HEADER_SERVER::CHALLENGE_Q << serverSalt << clientSalt<<challenge;
+			udpSocket->udpStatus = udpSocket->Receive(packet, ip, port);
+
+			//Creamos el challenge
+
+			break;
+		case HEADER_PLAYER::CHALLENGE_R:
+
+			break;
+		default:
+			break;
+		}
+
+	}
+
+}
 void Server::ServerLoop()
 {
 
