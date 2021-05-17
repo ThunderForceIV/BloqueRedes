@@ -13,10 +13,13 @@ void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 	sf::Packet packet;
 	sf::IpAddress ip;
 	unsigned short port;
+	std::string message;
 	while (true)
 	{
 		udpSocket->udpStatus = udpSocket->Receive(packet, ip, port);
+		packet >> message;
 		if (udpSocket->udpStatus == sf::Socket::Done) {
+			std::cout << message;
 			packet.clear();
 		}
 		
