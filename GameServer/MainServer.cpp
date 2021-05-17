@@ -4,6 +4,7 @@
 int main()
 {
 	Server servidor;
+	
 	servidor.ServerLoop();
 
 	return 0;

@@ -1,12 +1,13 @@
 #pragma once
-#include "UDPSocket.h"
-#include "PlayerInfo.h"
+#include "../GameLib/UDPSocket.h"
+#include "../GameLib/PlayerInfo.h"
 class Server
 {
-	UDPSocket * udpSocket;
-	std::map<unsigned short, PlayerInfo> clients;
+	
 	
 public:
+	UDPSocket* udpSocket;
+	std::map<unsigned short, PlayerInfo> clients;
 	Server();
 	~Server();
 	bool IsClientInMap(unsigned short checkPort);

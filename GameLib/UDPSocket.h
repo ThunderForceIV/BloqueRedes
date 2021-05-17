@@ -1,5 +1,5 @@
 #pragma once
-#include <SFML\Network.hpp>
+#include <SFML/Network.hpp>
 #include <mutex>
 #include <string>
 #include <SFML\Graphics.hpp>

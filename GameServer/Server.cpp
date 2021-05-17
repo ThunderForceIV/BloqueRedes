@@ -2,8 +2,12 @@
 
 Server::Server()
 {
-	udpSocket = new UDPSocket();
+	this->udpSocket = new UDPSocket();
 
+}
+
+Server::~Server()
+{
 }
 
 bool Server::IsClientInMap(unsigned short port)
@@ -19,28 +23,37 @@ bool Server::IsClientInMap(unsigned short port)
 
 void Server::SendMessage2AllClients(unsigned short port,sf::IpAddress ip, sf::Packet packet)
 {
+	std::string message;
+	packet >> message;
 	for (std::map<unsigned short, PlayerInfo>::iterator it = this->clients.begin();it != clients.end();it++) {
 		udpSocket->Send(packet, ip, port);
-		std::cout << "Se ha enviado " << packet << " al cliente " << std::endl;
+		std::cout << "Se ha enviado " << message << " al cliente " << std::endl;
 	}
+	packet.clear();
 }
 void Server::ServerLoop()
 {
 
-	udpSocket->Bind(50000);
+	this->udpSocket->Bind(50000);
 	sf::Packet packet;
 	sf::IpAddress ip;
 	unsigned short port;
+	std::string pickpocket;
+
 	while (true)
 	{
 		udpSocket->udpStatus = udpSocket->Receive(packet, ip, port);
+		packet >> pickpocket;
+		std::cout << pickpocket;
 		if (udpSocket->udpStatus == sf::Socket::Done) {
 			if (!this->IsClientInMap(port)) {
+				std::cout << "ENTRAMOS AQUI"<<std::endl;
 				PlayerInfo playerInfo;
 				clients.insert(std::pair<unsigned int, PlayerInfo>(port, playerInfo));
-				SendMessage2AllClients(port, ip, packet);
 				
 			}
+			SendMessage2AllClients(port, ip, packet);
+
 		}
 		else {
 			std::cout << "Ha habido un error recibiendo el paquete";

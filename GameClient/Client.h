@@ -1,7 +1,7 @@
 #pragma once
 
-#include "UDPSocket.h"
-class Client
+#include "../GameLib/UDPSocket.h"
+struct Client
 {
 	UDPSocket* udpSocket;
 

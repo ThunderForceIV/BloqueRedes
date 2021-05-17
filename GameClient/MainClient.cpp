@@ -87,9 +87,10 @@
 //	}
 //
 //}
-//#include "Client.h"
+
+#include "Client.h"
 int main() {
-	//Client cliente;
-	//cliente.ClientLoop();
-	//return 0;
+	Client cliente;
+	cliente.ClientLoop();
+	return 0;
 }

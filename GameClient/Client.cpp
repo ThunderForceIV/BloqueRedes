@@ -5,6 +5,10 @@ Client::Client()
 	udpSocket = new UDPSocket();
 }
 
+Client::~Client()
+{
+}
+
 void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 	sf::Packet packet;
 	sf::IpAddress ip;
@@ -13,12 +17,10 @@ void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 	{
 		udpSocket->udpStatus = udpSocket->Receive(packet, ip, port);
 		if (udpSocket->udpStatus == sf::Socket::Done) {
-			std::cout <<"Se ha recibido: " << packet << std::endl;
 			packet.clear();
 		}
 		
 		else {
-			std::cout << "Ha habido un error recibiendo el paquete";
 		}
 	}
 }
