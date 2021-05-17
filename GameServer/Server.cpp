@@ -46,13 +46,16 @@ void Server::ServerLoop()
 			if (!this->IsClientInMap(port)) {
 				PlayerInfo playerInfo;
 				clients.insert(std::pair<unsigned int, PlayerInfo>(port, playerInfo));
-				
+				std::cout << "El usuario " << port << " se ha registrado."<< std::endl;
+			
 			}
-			for (std::map<unsigned short, PlayerInfo>::iterator it = this->clients.begin();it != clients.end();it++) {
-				SendMessage2AllClients(pickpocket, it->first);
-
+			else {
+				for (std::map<unsigned short, PlayerInfo>::iterator it = this->clients.begin();it != clients.end();it++) {
+					if (it->first != port) {
+						SendMessage2AllClients(pickpocket, it->first);
+					}
+				}
 			}
-
 		}
 		else {
 			std::cout << "Ha habido un error recibiendo el paquete";

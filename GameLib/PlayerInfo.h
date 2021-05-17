@@ -4,6 +4,8 @@
 
 class PlayerInfo
 {
+	int playerSalt;
+	int playerId;
 	std::string name;
 	sf::Vector2i position;
 	int lives;

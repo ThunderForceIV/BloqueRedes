@@ -3,11 +3,11 @@
 #include "../GameLib/PlayerInfo.h"
 class Server
 {
-	
-	
-public:
+	int serverSalt;
 	UDPSocket* udpSocket;
 	std::map<unsigned short, PlayerInfo> clients;
+	
+public:
 	Server();
 	~Server();
 	bool IsClientInMap(unsigned short checkPort);

@@ -19,7 +19,7 @@ void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 		udpSocket->udpStatus = udpSocket->Receive(packet, ip, port);
 		packet >> message;
 		if (udpSocket->udpStatus == sf::Socket::Done) {
-			std::cout << message;
+			std::cout <<std::endl<<"Has recibido "<< message<<"."<<std::endl;
 			packet.clear();
 		}
 		
@@ -30,23 +30,35 @@ void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 void Client::SendingThread() {//Envia los paquetes
 	sf::Packet packet;
 	sf::IpAddress ip = sf::IpAddress::LocalHost;
-	unsigned short port = 50000;//Modificar este magic number
+	unsigned short port = SERVER_PORT;//Modificar este magic number
 	std::string message;
 	while (true)
 	{
-		std::cout << "Escribe el mensaje que quieras enviar: ";
+		std::cout << std::endl<< "Escribe el mensaje que quieras enviar: ";
 		std::cin >> message;
 		packet << message;
 		udpSocket->udpStatus = udpSocket->Send(packet, ip, port);
 
 		if (udpSocket->udpStatus == sf::Socket::Done) {
-			std::cout << "Se ha enviado: " << packet << std::endl;
+			std::cout <<std::endl<< "Se ha enviado: " << message << std::endl;
 			packet.clear();
+			message = "";
+			//std::cout << std::endl << "Escribe el mensaje que quieras enviar: ";
+
 		}
 		else {
 			std::cout << "Ha habido un error enviando el paquete";
 		}
 	}
+}
+void Client::ConnectionThread() {
+	sf::Packet packet;
+	sf::IpAddress ip = sf::IpAddress::LocalHost;
+	unsigned short port = SERVER_PORT;//Modificar este magic number
+
+	this->clientSalt = MAX_64BITS;
+	packet << HEADER_PLAYER::HELLO;
+	udpSocket->udpStatus = udpSocket->Send(packet, ip, port);
 }
 void Client::ClientLoop()
 {
