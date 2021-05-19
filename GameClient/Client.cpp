@@ -8,23 +8,81 @@ Client::Client()
 Client::~Client()
 {
 }
+//void Server::RecieveClients() {
+//	int recieverInt;
+//	sf::Packet packet;
+//	sf::IpAddress ip;
+//	unsigned short port;
+//	while (true) {
+//		udpSocket->udpStatus = udpSocket->Receive(packet, ip, port);
+//		packet >> recieverInt;
+//		switch (recieverInt)
+//		{
+//		case HEADER_PLAYER::HELLO:
+//			//Creamos el serversalt
+//			//Preguntar donde guardar el client y como
+//			//packet << HEADER_SERVER::CHALLENGE_Q << serverSalt << clientSalt<<challenge;
+//
+//			ManageHello(packet, ip, port);
+//			//Creamos el challenge
+//			packet << ManageChallenge();
+//			udpSocket->udpStatus = udpSocket->Send(packet, ip, port);
+//			break;
+//		case HEADER_PLAYER::CHALLENGE_R:
+//
+//			break;
+//		default:
+//			break;
+//		}
+//
+//	}
+//
+//}
 
+void Client::ManageChallenge_Q(sf::Packet &packet, sf::IpAddress &ip, unsigned short &port) {
+	packet >> clientSalt;
+	packet >> serverSalt;
+	packet >> challengeNumber;
+	packet.clear();
+	packet << HEADER_PLAYER::CHALLENGE_R;
+	packet << clientSalt;
+	packet << serverSalt;
+
+	
+}
+int Client::ResolveChallenge(int challengeNumber) {
+	return challengeNumber / 2;
+}
 void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 	sf::Packet packet;
 	sf::IpAddress ip;
 	unsigned short port;
 	std::string message;
+	int recieverInt;
+
 	while (true)
 	{
 		udpSocket->udpStatus = udpSocket->Receive(packet, ip, port);
-		packet >> message;
-		if (udpSocket->udpStatus == sf::Socket::Done) {
-			std::cout <<std::endl<<"Has recibido "<< message<<"."<<std::endl;
-			packet.clear();
+		packet >> recieverInt;
+
+		switch (recieverInt) {
+		case HEADER_SERVER::CHALLENGE_Q:
+			ManageChallenge_Q(packet, ip, port);
+			packet << ResolveChallenge(challengeNumber);
+			port = SERVER_PORT;
+			udpSocket->udpStatus = udpSocket->Send(packet, ip, port);
+
+			break;
+		case HEADER_SERVER::WELCOME:
+			break;
+		case HEADER_SERVER::GENERICMSG_S:
+			packet >> message;
+			if (udpSocket->udpStatus == sf::Socket::Done) {
+				std::cout << std::endl << "Has recibido " << message << "." << std::endl;
+				packet.clear();
+			}
 		}
 		
-		else {
-		}
 	}
 }
 void Client::SendingThread() {//Envia los paquetes

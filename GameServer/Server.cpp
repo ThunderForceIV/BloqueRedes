@@ -55,6 +55,12 @@ int Server::ManageChallenge() {
 	}
 	return challengeNumber;
 }
+void ManageChallenge_R(sf::Packet& packet, sf::IpAddress& ip, unsigned short& port) {
+
+}
+bool ResolveChallenge(int number) {
+	
+}
 void Server::RecieveClients() {
 	int recieverInt;
 	sf::Packet packet;
@@ -76,7 +82,8 @@ void Server::RecieveClients() {
 			udpSocket->udpStatus = udpSocket->Send(packet, ip, port);
 			break;
 		case HEADER_PLAYER::CHALLENGE_R:
-
+			ManageChallenge_R(packet, ip, port);
+			
 			break;
 		default:
 			break;
