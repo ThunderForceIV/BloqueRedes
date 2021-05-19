@@ -8,36 +8,7 @@ Client::Client()
 Client::~Client()
 {
 }
-//void Server::RecieveClients() {
-//	int recieverInt;
-//	sf::Packet packet;
-//	sf::IpAddress ip;
-//	unsigned short port;
-//	while (true) {
-//		udpSocket->udpStatus = udpSocket->Receive(packet, ip, port);
-//		packet >> recieverInt;
-//		switch (recieverInt)
-//		{
-//		case HEADER_PLAYER::HELLO:
-//			//Creamos el serversalt
-//			//Preguntar donde guardar el client y como
-//			//packet << HEADER_SERVER::CHALLENGE_Q << serverSalt << clientSalt<<challenge;
-//
-//			ManageHello(packet, ip, port);
-//			//Creamos el challenge
-//			packet << ManageChallenge();
-//			udpSocket->udpStatus = udpSocket->Send(packet, ip, port);
-//			break;
-//		case HEADER_PLAYER::CHALLENGE_R:
-//
-//			break;
-//		default:
-//			break;
-//		}
-//
-//	}
-//
-//}
+
 
 void Client::ManageChallenge_Q(sf::Packet &packet, sf::IpAddress &ip, unsigned short &port) {
 	packet >> clientSalt;
@@ -74,6 +45,8 @@ void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 
 			break;
 		case HEADER_SERVER::WELCOME:
+			userRegisted = true;
+
 			break;
 		case HEADER_SERVER::GENERICMSG_S:
 			packet >> message;
@@ -124,16 +97,11 @@ void Client::ConnectionThread() {
 }
 void Client::ClientLoop()
 {
-	std::thread tConnection(&Client::ConnectionThread, this);
-	tConnection.detach();
-
-	//Cuando este conectado hace lo siguiente
-	if (false) {
-		std::thread tRecieve(&Client::RecievingThread, this);
-		tRecieve.detach();
-		std::thread tSend(&Client::SendingThread, this);
-		tSend.detach();
-	}
+	std::thread tRecieve(&Client::RecievingThread, this);
+	tRecieve.detach();
+	std::thread tSend(&Client::SendingThread, this);
+	tSend.detach();
+	
 	while (true)
 	{
 

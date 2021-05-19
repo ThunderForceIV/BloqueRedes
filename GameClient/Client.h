@@ -9,6 +9,7 @@ public:
 	int serverSalt;
 	int clientSalt;
 	int challengeNumber;
+	bool userRegisted;
 	Client();
 	~Client();
 	void ManageChallenge_Q(sf::Packet& packet, sf::IpAddress& ip, unsigned short& port);

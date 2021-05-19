@@ -49,18 +49,42 @@ void Server::ManageHello(sf::Packet &packet, sf::IpAddress &ip, unsigned short &
 	packet << playerInfo.serverSalt;
 }
 int Server::ManageChallenge() {
-	int challengeNumber;
+	int challengeNumber = -1;
 	while (challengeNumber % 2 != 0) {
 		challengeNumber = rand() % 100 + 1;
 	}
 	return challengeNumber;
 }
-void ManageChallenge_R(sf::Packet& packet, sf::IpAddress& ip, unsigned short& port) {
+bool Server::ResolveChallenge(int clientAnswer, int clientQuestion) {
+	return clientAnswer * 2 == clientQuestion;
+}
+void Server::ManageChallenge_R(sf::Packet& packet, sf::IpAddress& ip, unsigned short& port) {
+	int actualClientSalt;
+	int actualServerSalt;
+	int clientAnswer;
+	for (std::map<unsigned short, PlayerInfo>::iterator it = clientsWaiting.begin();it != clientsWaiting.end();it++) {
+		
+		if (it->first == port) {
+			packet >> actualClientSalt;
+			packet >> actualServerSalt;
+			packet >> clientAnswer;
+			if (it->second.playerSalt == actualClientSalt && it->second.serverSalt == actualServerSalt && ResolveChallenge(clientAnswer, it->second.challengeNumber)) {
+				packet.clear();
+				packet << HEADER_SERVER::WELCOME;
+				packet << actualClientSalt;
+				packet << actualServerSalt;
+				if (!this->IsClientInMap(port)) {
+					clients.insert(std::pair<unsigned int, PlayerInfo>(port, it->second));
+				}
+				udpSocket->udpStatus = udpSocket->Send(packet, ip, port);
 
+			}
+		}
+	}
 }
-bool ResolveChallenge(int number) {
-	
-}
+
+
+
 void Server::RecieveClients() {
 	int recieverInt;
 	sf::Packet packet;
@@ -92,6 +116,8 @@ void Server::RecieveClients() {
 	}
 
 }
+
+
 void Server::ServerLoop()
 {
 
@@ -99,30 +125,51 @@ void Server::ServerLoop()
 	sf::Packet packet;
 	sf::IpAddress ip;
 	unsigned short port;
-	std::string pickpocket;
+	int recieverInt;
+	int auxiliarPlayerSalt;
+	int auxiliarServerSalt;
+	std::string auxiliarMessage;
 
 	while (true)
 	{
 		udpSocket->udpStatus = udpSocket->Receive(packet, ip, port);
-		packet >> pickpocket;
+		packet >> recieverInt;
+
 		if (udpSocket->udpStatus == sf::Socket::Done) {
-			if (!this->IsClientInMap(port)) {
-				PlayerInfo playerInfo;
-				clients.insert(std::pair<unsigned int, PlayerInfo>(port, playerInfo));
-				std::cout << "El usuario " << port << " se ha registrado."<< std::endl;
-			
-			}
-			else {
+			switch (recieverInt)
+			{
+			case HEADER_PLAYER::HELLO:
+				//Creamos el serversalt
+				//Preguntar donde guardar el client y como
+				//packet << HEADER_SERVER::CHALLENGE_Q << serverSalt << clientSalt<<challenge;
+
+				ManageHello(packet, ip, port);
+				//Creamos el challenge
+				packet << ManageChallenge();
+				udpSocket->udpStatus = udpSocket->Send(packet, ip, port);
+				break;
+			case HEADER_PLAYER::CHALLENGE_R:
+				ManageChallenge_R(packet, ip, port);
+
+				break;
+
+			case HEADER_PLAYER::GENERICMSG_P:
+				
+				packet >> auxiliarPlayerSalt;
+				packet >> auxiliarServerSalt;
+				packet >> auxiliarMessage;
 				for (std::map<unsigned short, PlayerInfo>::iterator it = this->clients.begin();it != clients.end();it++) {
 					if (it->first != port) {
-						SendMessage2AllClients(pickpocket, it->first);
+						SendMessage2AllClients(auxiliarMessage, it->first);
 					}
 				}
+				break;
+			default:
+				break;
 			}
 		}
-		else {
-			std::cout << "Ha habido un error recibiendo el paquete";
-		}
+
+	
 
 
 	}
