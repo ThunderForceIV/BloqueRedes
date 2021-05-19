@@ -23,20 +23,21 @@ bool Server::IsClientInMap(unsigned short port)
 void Server::SendMessage2AllClients(std::string message, unsigned short port)
 {
 	sf::Packet packet;
+	packet << HEADER_SERVER::GENERICMSG_S;
 	packet << message;
+
 	udpSocket->Send(packet, sf::IpAddress::LocalHost,port);
 
 
 	packet.clear();
 }
 void Server::ManageHello(sf::Packet &packet, sf::IpAddress &ip, unsigned short &port) {
-	udpSocket->udpStatus = udpSocket->Receive(packet, ip, port);//Recibimos el paquete, la ip y el port.
 	PlayerInfo playerInfo;
 
 	//Recibimos el playerSalt y guardamos información en el serverSalt
 	packet >> playerInfo.playerSalt;
 	playerInfo.serverSalt = rand() % MAX_64BITS;
-
+	playerInfo.challengeNumber = ManageChallenge();
 	//Insertamos el cliente en una lista de los clientes pendientes.
 	clientsWaiting.insert(std::pair<unsigned int, PlayerInfo>(port, playerInfo));
 
@@ -47,6 +48,8 @@ void Server::ManageHello(sf::Packet &packet, sf::IpAddress &ip, unsigned short &
 	packet << HEADER_SERVER::CHALLENGE_Q;
 	packet << playerInfo.playerSalt;
 	packet << playerInfo.serverSalt;
+	packet << playerInfo.challengeNumber;
+
 }
 int Server::ManageChallenge() {
 	int challengeNumber = -1;
@@ -62,13 +65,26 @@ void Server::ManageChallenge_R(sf::Packet& packet, sf::IpAddress& ip, unsigned s
 	int actualClientSalt;
 	int actualServerSalt;
 	int clientAnswer;
+
 	for (std::map<unsigned short, PlayerInfo>::iterator it = clientsWaiting.begin();it != clientsWaiting.end();it++) {
-		
+
 		if (it->first == port) {
+
 			packet >> actualClientSalt;
 			packet >> actualServerSalt;
 			packet >> clientAnswer;
+			std::cout << "Player Salt del map: " << it->second.playerSalt << std::endl;
+			std::cout << "Player Salt del cliente: " << actualClientSalt << std::endl;
+
+			std::cout << "Server Salt del map: " << it->second.serverSalt << std::endl;
+			std::cout << "server Salt del cliente: " << actualServerSalt << std::endl;
+
+			std::cout << "Numero de desafio: " << it->second.challengeNumber << std::endl;
+			std::cout << "ClientAnswer: " << clientAnswer << std::endl;
+
 			if (it->second.playerSalt == actualClientSalt && it->second.serverSalt == actualServerSalt && ResolveChallenge(clientAnswer, it->second.challengeNumber)) {
+				std::cout << "1sadadadadasdad5" << std::endl;
+
 				packet.clear();
 				packet << HEADER_SERVER::WELCOME;
 				packet << actualClientSalt;
@@ -90,20 +106,24 @@ void Server::RecieveClients() {
 	sf::Packet packet;
 	sf::IpAddress ip;
 	unsigned short port;
+	std::cout << "7" << std::endl;
 	while (true) {
 		udpSocket->udpStatus = udpSocket->Receive(packet, ip, port);
 		packet >> recieverInt;
+		std::cout << "5" << std::endl;
 		switch (recieverInt)
 		{
 		case HEADER_PLAYER::HELLO:
 			//Creamos el serversalt
 			//Preguntar donde guardar el client y como
 			//packet << HEADER_SERVER::CHALLENGE_Q << serverSalt << clientSalt<<challenge;
-			
+			std::cout << "3" << std::endl;
 			ManageHello(packet, ip, port);
-			//Creamos el challenge
+			//Creamos el challengeç
 			packet << ManageChallenge();
 			udpSocket->udpStatus = udpSocket->Send(packet, ip, port);
+			std::cout << "2" << std::endl;
+
 			break;
 		case HEADER_PLAYER::CHALLENGE_R:
 			ManageChallenge_R(packet, ip, port);
@@ -129,6 +149,7 @@ void Server::ServerLoop()
 	int auxiliarPlayerSalt;
 	int auxiliarServerSalt;
 	std::string auxiliarMessage;
+	std::cout << "LLEGAMOS DON FERNANDITO";
 
 	while (true)
 	{
@@ -142,21 +163,22 @@ void Server::ServerLoop()
 				//Creamos el serversalt
 				//Preguntar donde guardar el client y como
 				//packet << HEADER_SERVER::CHALLENGE_Q << serverSalt << clientSalt<<challenge;
-
 				ManageHello(packet, ip, port);
 				//Creamos el challenge
-				packet << ManageChallenge();
+
 				udpSocket->udpStatus = udpSocket->Send(packet, ip, port);
+
 				break;
 			case HEADER_PLAYER::CHALLENGE_R:
+
 				ManageChallenge_R(packet, ip, port);
 
 				break;
 
 			case HEADER_PLAYER::GENERICMSG_P:
-				
-				packet >> auxiliarPlayerSalt;
-				packet >> auxiliarServerSalt;
+			
+
+		
 				packet >> auxiliarMessage;
 				for (std::map<unsigned short, PlayerInfo>::iterator it = this->clients.begin();it != clients.end();it++) {
 					if (it->first != port) {
