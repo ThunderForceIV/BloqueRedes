@@ -58,6 +58,8 @@ void Client::ConnectionThread() {
 
 	this->clientSalt = rand()%MAX_64BITS;
 	packet << HEADER_PLAYER::HELLO;
+	packet << clientSalt;
+	
 	while(true){
 	udpSocket->udpStatus = udpSocket->Send(packet, ip, port);
 	}

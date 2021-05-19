@@ -6,12 +6,15 @@ class Server
 	int serverSalt;
 	UDPSocket* udpSocket;
 	std::map<unsigned short, PlayerInfo> clients;
+	std::map<unsigned short, PlayerInfo> clientsWaiting;
 	
 public:
 	Server();
 	~Server();
 	bool IsClientInMap(unsigned short checkPort);
 	void SendMessage2AllClients(std::string message, unsigned short port);
+	void ManageHello(sf::Packet& packet, sf::IpAddress& ip, unsigned short& port);
+	int ManageChallenge();
 	void RecieveClients();
 	void ServerLoop();
 };

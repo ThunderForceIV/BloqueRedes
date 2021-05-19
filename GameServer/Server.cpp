@@ -29,7 +29,32 @@ void Server::SendMessage2AllClients(std::string message, unsigned short port)
 
 	packet.clear();
 }
+void Server::ManageHello(sf::Packet &packet, sf::IpAddress &ip, unsigned short &port) {
+	udpSocket->udpStatus = udpSocket->Receive(packet, ip, port);//Recibimos el paquete, la ip y el port.
+	PlayerInfo playerInfo;
 
+	//Recibimos el playerSalt y guardamos información en el serverSalt
+	packet >> playerInfo.playerSalt;
+	playerInfo.serverSalt = rand() % MAX_64BITS;
+
+	//Insertamos el cliente en una lista de los clientes pendientes.
+	clientsWaiting.insert(std::pair<unsigned int, PlayerInfo>(port, playerInfo));
+
+	//Limpiamos el packet
+	packet.clear();
+
+	//Añadimos la información nueva al paquete. 
+	packet << HEADER_SERVER::CHALLENGE_Q;
+	packet << playerInfo.playerSalt;
+	packet << playerInfo.serverSalt;
+}
+int Server::ManageChallenge() {
+	int challengeNumber;
+	while (challengeNumber % 2 != 0) {
+		challengeNumber = rand() % 100 + 1;
+	}
+	return challengeNumber;
+}
 void Server::RecieveClients() {
 	int recieverInt;
 	sf::Packet packet;
@@ -38,17 +63,17 @@ void Server::RecieveClients() {
 	while (true) {
 		udpSocket->udpStatus = udpSocket->Receive(packet, ip, port);
 		packet >> recieverInt;
-		
 		switch (recieverInt)
 		{
 		case HEADER_PLAYER::HELLO:
 			//Creamos el serversalt
 			//Preguntar donde guardar el client y como
 			//packet << HEADER_SERVER::CHALLENGE_Q << serverSalt << clientSalt<<challenge;
-			udpSocket->udpStatus = udpSocket->Receive(packet, ip, port);
-
+			
+			ManageHello(packet, ip, port);
 			//Creamos el challenge
-
+			packet << ManageChallenge();
+			udpSocket->udpStatus = udpSocket->Send(packet, ip, port);
 			break;
 		case HEADER_PLAYER::CHALLENGE_R:
 

@@ -4,12 +4,14 @@
 
 class PlayerInfo
 {
+	
+public:
 	int playerSalt;
 	int playerId;
+	int serverSalt;
 	std::string name;
 	sf::Vector2i position;
 	int lives;
-public:
 	PlayerInfo();
 	~PlayerInfo();
 };
