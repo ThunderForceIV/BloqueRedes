@@ -84,14 +84,25 @@ void Client::SendingThread() {//Envia los paquetes
 			std::cout << std::endl << "Escribe el mensaje que quieras enviar: ";
 			std::cin >> message;
 			packet.clear();
-			packet << HEADER_PLAYER::GENERICMSG_P;
-		
-			packet << message;
-			udpSocket->udpStatus = udpSocket->Send(packet, ip, port);
 
+			if (message == "exit") {
+				packet << HEADER_PLAYER::EXIT;
+				packet << message;
+				udpSocket->udpStatus = udpSocket->Send(packet, ip, port);
+				exit(0);
+
+
+			}
+			else {
+				packet << HEADER_PLAYER::GENERICMSG_P;
+
+				packet << message;
+				udpSocket->udpStatus = udpSocket->Send(packet, ip, port);
+			}
 			if (udpSocket->udpStatus == sf::Socket::Done) {
 				std::cout << std::endl << "Se ha enviado: " << message << std::endl;
 				packet.clear();
+
 				message = "";
 				//std::cout << std::endl << "Escribe el mensaje que quieras enviar: ";
 

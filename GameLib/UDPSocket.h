@@ -6,7 +6,8 @@
 #include <iostream>
 #include <map>
 #include "Types.h"
-
+#include <chrono>
+#include <cstdlib>
 class UDPSocket
 {
 	sf::UdpSocket* udpSocket;

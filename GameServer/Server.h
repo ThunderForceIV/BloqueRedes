@@ -9,6 +9,9 @@ class Server
 	std::map<unsigned short, PlayerInfo> clientsWaiting;
 	
 public:
+	sf::Packet packet;
+	sf::IpAddress ip;
+	unsigned short port;
 	Server();
 	~Server();
 	bool IsClientInMap(unsigned short checkPort);
@@ -18,6 +21,8 @@ public:
 	int ManageChallenge();
 	bool ResolveChallenge(int clientAnswer, int clientQuestion);
 	void RecieveClients();
+	void ExitThread();
+	
 	void ServerLoop();
 };
 

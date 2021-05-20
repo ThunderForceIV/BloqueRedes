@@ -136,27 +136,45 @@ void Server::RecieveClients() {
 	}
 
 }
+void Server::ExitThread() {
+	std::string message;
 
+	std::cout << std::endl << "Escribe el mensaje que quieras enviar: ";
+	std::cin >> message;
+
+	if (message == "exit") {
+		packet.clear();
+
+		packet << HEADER_PLAYER::EXIT;
+		packet << message;
+		udpSocket->udpStatus = udpSocket->Send(packet, ip, port);
+		exit(0);
+
+
+	}
+}
 
 void Server::ServerLoop()
 {
 
 	this->udpSocket->Bind(50000);
-	sf::Packet packet;
-	sf::IpAddress ip;
-	unsigned short port;
+
 	int recieverInt;
 	int auxiliarPlayerSalt;
 	int auxiliarServerSalt;
 	std::string auxiliarMessage;
 	std::cout << "LLEGAMOS DON FERNANDITO";
 
+	std::thread tExit(&Server::ExitThread, this);
+	tExit.detach();
 	while (true)
 	{
 		udpSocket->udpStatus = udpSocket->Receive(packet, ip, port);
 		packet >> recieverInt;
 
+
 		if (udpSocket->udpStatus == sf::Socket::Done) {
+			
 			switch (recieverInt)
 			{
 			case HEADER_PLAYER::HELLO:
@@ -186,9 +204,24 @@ void Server::ServerLoop()
 					}
 				}
 				break;
+			case HEADER_PLAYER::EXIT:
+				clients.erase(port);
+					
+				
+				for (std::map<unsigned short, PlayerInfo>::iterator it = this->clients.begin();it != clients.end();it++) {
+					SendMessage2AllClients("Un jugador se ha desconectado", it->first);
+
+				}
+			
+
+				break;
+
+
+
 			default:
 				break;
 			}
+			
 		}
 
 	
