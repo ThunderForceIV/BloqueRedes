@@ -1,11 +1,12 @@
 #pragma once
 #include <SFML\Graphics.hpp>
 #include <random>
-
+#include "Timer.h"
 class PlayerInfo
 {
 	
 public:
+	
 	int playerSalt;
 	int playerId;
 	int serverSalt;
@@ -13,6 +14,7 @@ public:
 	std::string name;
 	sf::Vector2i position;
 	int lives;
+	Timer* lastConnection;
 	PlayerInfo();
 	~PlayerInfo();
 };

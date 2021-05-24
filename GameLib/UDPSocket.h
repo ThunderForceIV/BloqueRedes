@@ -8,6 +8,8 @@
 #include "Types.h"
 #include <chrono>
 #include <cstdlib>
+#include <list>
+#include <mutex>
 class UDPSocket
 {
 	sf::UdpSocket* udpSocket;

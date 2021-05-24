@@ -136,6 +136,39 @@ void Server::RecieveClients() {
 	}
 
 }
+
+void Server::checkInactivity() 
+{
+	std::list<unsigned short> inactivityCheck;
+	std::mutex mtx;
+	while (true)
+	{
+		for (std::map<unsigned short, PlayerInfo>::iterator it = clients.begin();it != clients.end();it++) {
+			if (it->second.lastConnection->GetDuration() > PLAYER_DESCONNECTION)
+			{
+				inactivityCheck.push_back(it->first);
+			}
+		}
+		mtx.lock();
+		for (std::list<unsigned short>::iterator it = inactivityCheck.begin(); it != inactivityCheck.end(); ++it) {
+			clients.erase(*it);
+			std::cout << "Se ha desconectado ";
+			for (std::map<unsigned short, PlayerInfo>::iterator it = clients.begin();it != clients.end();it++) {
+				//Tenemos que avisar a los demás
+			}
+			
+
+		}
+		mtx.unlock();
+		inactivityCheck.clear();
+
+		std::this_thread::sleep_for(std::chrono::seconds(1));
+	}
+
+
+
+
+}
 void Server::ExitThread() {
 	std::string message;
 
@@ -167,6 +200,9 @@ void Server::ServerLoop()
 
 	std::thread tExit(&Server::ExitThread, this);
 	tExit.detach();
+
+	std::thread tCheckInactivity(&Server::checkInactivity, this);
+	tCheckInactivity.detach();
 	while (true)
 	{
 		udpSocket->udpStatus = udpSocket->Receive(packet, ip, port);

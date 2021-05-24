@@ -21,6 +21,7 @@ public:
 	int ManageChallenge();
 	bool ResolveChallenge(int clientAnswer, int clientQuestion);
 	void RecieveClients();
+	void checkInactivity();
 	void ExitThread();
 	
 	void ServerLoop();

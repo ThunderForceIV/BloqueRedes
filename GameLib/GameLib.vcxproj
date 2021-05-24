@@ -144,11 +144,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PlayerInfo.h" />
+    <ClInclude Include="Timer.h" />
     <ClInclude Include="Types.h" />
     <ClInclude Include="UDPSocket.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="PlayerInfo.cpp" />
+    <ClCompile Include="Timer.cpp" />
     <ClCompile Include="UDPSocket.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
