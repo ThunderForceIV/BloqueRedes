@@ -238,6 +238,9 @@ void Server::ServerLoop()
 					if (it->first != port) {
 						SendMessage2AllClients(auxiliarMessage, it->first);
 					}
+					else {
+						it->second.lastConnection->ResetTimer();
+					}
 				}
 				break;
 			case HEADER_PLAYER::EXIT:

@@ -24,6 +24,13 @@ void Client::ManageChallenge_Q(sf::Packet &packet, sf::IpAddress &ip, unsigned s
 int Client::ResolveChallenge(int challengeNumber) {
 	return challengeNumber / 2;
 }
+
+static float GetRandomFloat() {
+	static std::random_device rd;
+	static std::mt19937 gen(rd());
+	static std::uniform_real_distribution<float> dis(0.f, 1.f);
+	return dis(gen);
+}
 void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 	sf::Packet packet;
 	sf::IpAddress ip;
@@ -33,34 +40,40 @@ void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 
 	while (true)
 	{
+		rndPacketLoss = GetRandomFloat();
 		udpSocket->udpStatus = udpSocket->Receive(packet, ip, port);
-		packet >> recieverInt;
 
-		switch (recieverInt) {
-		case HEADER_SERVER::CHALLENGE_Q:
+		if (rndPacketLoss > PERCENT_PACKETLOSS) {
+			packet >> recieverInt;
+
+			switch (recieverInt) {
+			case HEADER_SERVER::CHALLENGE_Q:
 
 
-			ManageChallenge_Q(packet, ip, port);
-			packet << ResolveChallenge(challengeNumber);
-			std::cout << ResolveChallenge(challengeNumber);
+				ManageChallenge_Q(packet, ip, port);
+				packet << ResolveChallenge(challengeNumber);
+				std::cout << ResolveChallenge(challengeNumber);
 
-			port = SERVER_PORT;
-			udpSocket->udpStatus = udpSocket->Send(packet, ip, port);
+				port = SERVER_PORT;
+				udpSocket->udpStatus = udpSocket->Send(packet, ip, port);
 
-			break;
-		case HEADER_SERVER::WELCOME:
+				break;
+			case HEADER_SERVER::WELCOME:
 
-			userRegisted = true;
+				userRegisted = true;
 
-			break;
-		case HEADER_SERVER::GENERICMSG_S:
-			packet >> message;
-			if (udpSocket->udpStatus == sf::Socket::Done) {
-				std::cout << std::endl << "Has recibido " << message << "." << std::endl;
-				packet.clear();
+				break;
+			case HEADER_SERVER::GENERICMSG_S:
+				packet >> message;
+				if (udpSocket->udpStatus == sf::Socket::Done) {
+					std::cout << std::endl << "Has recibido " << message << "." << std::endl;
+					packet.clear();
+				}
 			}
 		}
-		
+		else {
+			std::cout << "SE HA PERDIDO EL PAQUETE";
+		}
 	}
 }
 void Client::SendingThread() {//Envia los paquetes

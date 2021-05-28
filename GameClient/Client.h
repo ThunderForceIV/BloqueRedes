@@ -11,6 +11,7 @@ public:
 	int challengeNumber;
 	bool userRegisted = false;
 	bool firstTimeBro = false;
+	float rndPacketLoss;
 	Client();
 	~Client();
 	void ManageChallenge_Q(sf::Packet& packet, sf::IpAddress& ip, unsigned short& port);
