@@ -41,6 +41,7 @@ void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 	while (true)
 	{
 		rndPacketLoss = GetRandomFloat();
+		std::cout << rndPacketLoss<<std::endl;
 		udpSocket->udpStatus = udpSocket->Receive(packet, ip, port);
 
 		if (rndPacketLoss > PERCENT_PACKETLOSS) {
@@ -61,7 +62,7 @@ void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 			case HEADER_SERVER::WELCOME:
 
 				userRegisted = true;
-
+				protocolConnected = true;
 				break;
 			case HEADER_SERVER::GENERICMSG_S:
 				packet >> message;
@@ -76,6 +77,20 @@ void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 		}
 	}
 }
+void Client::SendHello()
+{
+	std::string msg;
+	sf::Packet packet;
+	while (!protocolConnected) {
+		this->clientSalt = rand() % MAX_64BITS;
+		packet << HEADER_PLAYER::HELLO;
+		packet << clientSalt;
+		udpSocket->udpStatus = udpSocket->Send(packet, sf::IpAddress::LocalHost, SERVER_PORT);
+		std::cout << "Se ha enviado Hello al server" << std::endl;
+		std::this_thread::sleep_for(std::chrono::milliseconds(300));
+	
+	}
+}
 void Client::SendingThread() {//Envia los paquetes
 	sf::Packet packet;
 	sf::IpAddress ip = sf::IpAddress::LocalHost;
@@ -83,17 +98,7 @@ void Client::SendingThread() {//Envia los paquetes
 	std::string message;
 	while (true)
 	{
-		if (userRegisted==false) {
-			if (!firstTimeBro) {
-				this->clientSalt = rand() % MAX_64BITS;
-				packet << HEADER_PLAYER::HELLO;
-				packet << clientSalt;
-				udpSocket->udpStatus = udpSocket->Send(packet, ip, port);
-				std::cout << "1" << std::endl;
-				firstTimeBro = true;
-			}
-		}
-		else {
+		if (protocolConnected) {
 			std::cout << std::endl << "Escribe el mensaje que quieras enviar: ";
 			std::cin >> message;
 			packet.clear();
@@ -124,17 +129,20 @@ void Client::SendingThread() {//Envia los paquetes
 				std::cout << "Ha habido un error enviando el paquete";
 			}
 		}
+	
 	}
 }
 
 void Client::ClientLoop()
 {
 
-
+	std::thread sendHello(&Client::SendHello,this);
+	sendHello.detach();
 	std::thread tRecieve(&Client::RecievingThread, this);
 	tRecieve.detach();
 	std::thread tSend(&Client::SendingThread, this);
 	tSend.detach();
+	
 	
 	while (true)
 	{
