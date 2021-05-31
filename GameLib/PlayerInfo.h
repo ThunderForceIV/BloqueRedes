@@ -18,3 +18,15 @@ public:
 	PlayerInfo();
 	~PlayerInfo();
 };
+
+struct CriticalPackets
+{
+	unsigned short port;
+	sf::IpAddress ip;
+	Timer* timer = new Timer();
+	HEADER_GAMESTATE header = HEADER_GAMESTATE::CRITICALPACKAGE;
+	int local;
+	std::string message;
+
+
+};

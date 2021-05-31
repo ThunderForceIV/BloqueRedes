@@ -7,13 +7,15 @@ class Server
 	UDPSocket* udpSocket;
 	std::map<unsigned short, PlayerInfo> clients;
 	std::map<unsigned short, PlayerInfo> clientsWaiting;
-	
 public:
 	sf::Packet packet;
 	sf::IpAddress ip;
 	unsigned short port;
+	std::map<int, CriticalPackets>criticalPackets;
+
 	Server();
 	~Server();
+	void fillCriticalMap(int key, std::string message, unsigned short port);
 	bool IsClientInMap(unsigned short checkPort);
 	void SendMessage2AllClients(std::string message, unsigned short port);
 	void ManageHello(sf::Packet& packet, sf::IpAddress& ip, unsigned short& port);
@@ -24,6 +26,13 @@ public:
 	void checkInactivity();
 	void ExitThread();
 	
+
+	
+
+	void SendCriticalPackets();
+
+	void manageCriticalPackets();
+
 	void ServerLoop();
 };
 

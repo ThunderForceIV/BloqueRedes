@@ -25,6 +25,19 @@ int Client::ResolveChallenge(int challengeNumber) {
 	return challengeNumber / 2;
 }
 
+void Client::manageCriticalPackage(sf::Packet &packet) {
+	int key;
+	std::string message;
+	packet >> key;
+	packet >> message;
+	std::cout << "Se ha recibido un Paquete critico" << std::endl;
+	packet.clear();
+	packet << HEADER_GAMESTATE::CRITICALPACKAGE;
+	packet << key;
+	packet << "respuesta";
+	udpSocket->udpStatus = udpSocket->Send(packet, sf::IpAddress::LocalHost, SERVER_PORT);
+
+}
 static float GetRandomFloat() {
 	static std::random_device rd;
 	static std::mt19937 gen(rd());
@@ -41,12 +54,11 @@ void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 	while (true)
 	{
 		rndPacketLoss = GetRandomFloat();
-		std::cout << rndPacketLoss<<std::endl;
+		std::cout << rndPacketLoss << std::endl;
 		udpSocket->udpStatus = udpSocket->Receive(packet, ip, port);
 
 		if (rndPacketLoss > PERCENT_PACKETLOSS) {
 			packet >> recieverInt;
-
 			switch (recieverInt) {
 			case HEADER_SERVER::CHALLENGE_Q:
 
@@ -70,8 +82,14 @@ void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 					std::cout << std::endl << "Has recibido " << message << "." << std::endl;
 					packet.clear();
 				}
+
+
+			case HEADER_SERVER::CRITICALPACKAGE_S:
+				manageCriticalPackage(packet);
 			}
 		}
+	
+		
 		else {
 			std::cout << "SE HA PERDIDO EL PAQUETE";
 		}

@@ -1,4 +1,3 @@
-
 #pragma once
 const int MAX_64BITS = 2147483647;
 const int SERVER_PORT = 50000;
@@ -13,6 +12,7 @@ enum HEADER_PLAYER
 	CHALLENGE_R,
 	GENERICMSG_P,
 	EXIT,
+	CRITICALPACKAGE_P,
 };
 
 enum HEADER_SERVER
@@ -20,16 +20,10 @@ enum HEADER_SERVER
 	CHALLENGE_Q,
 	WELCOME,
 	GENERICMSG_S,
+	CRITICALPACKAGE_S,
 };
 
-//struct CriticalPackets
-//{
-//	unsigned short port;
-//	sf::IpAddress ip;
-//
-//	int local;
-//	
-//	Timer* rtt = new Timer();
-//	std::string message;
-//
-//};
+enum HEADER_GAMESTATE
+{
+	
+};

@@ -10,6 +10,16 @@ Server::~Server()
 {
 }
 
+void Server::fillCriticalMap(int key, std::string message, unsigned short port) {
+	CriticalPackets critical;
+	critical.ip = sf::IpAddress::LocalHost;
+	critical.port = port;
+	critical.local = key;
+	critical.message = message;
+	criticalPackets.insert(std::pair<int, CriticalPackets>(key, critical));
+
+
+}
 bool Server::IsClientInMap(unsigned short port)
 {
 	for (std::map<unsigned short, PlayerInfo>::iterator it = clients.begin();it != clients.end();it++) {
@@ -66,6 +76,7 @@ void Server::ManageChallenge_R(sf::Packet& packet, sf::IpAddress& ip, unsigned s
 	int actualServerSalt;
 	int clientAnswer;
 
+	bool addedClient = false;
 	for (std::map<unsigned short, PlayerInfo>::iterator it = clientsWaiting.begin();it != clientsWaiting.end();it++) {
 
 		if (it->first == port) {
@@ -83,7 +94,6 @@ void Server::ManageChallenge_R(sf::Packet& packet, sf::IpAddress& ip, unsigned s
 			std::cout << "ClientAnswer: " << clientAnswer << std::endl;
 
 			if (it->second.playerSalt == actualClientSalt && it->second.serverSalt == actualServerSalt && ResolveChallenge(clientAnswer, it->second.challengeNumber)) {
-				std::cout << "1sadadadadasdad5" << std::endl;
 
 				packet.clear();
 				packet << HEADER_SERVER::WELCOME;
@@ -95,6 +105,14 @@ void Server::ManageChallenge_R(sf::Packet& packet, sf::IpAddress& ip, unsigned s
 				udpSocket->udpStatus = udpSocket->Send(packet, ip, port);
 
 			}
+		}
+	}
+	//ESTO SIRVE PARA LOS PAQUETES CRITICOS
+	if (addedClient) {
+		int key = 0;
+		for (std::map<unsigned short, PlayerInfo>::iterator it = clients.begin();it != clients.end();it++) {
+			fillCriticalMap(key, "Critical", it->first);
+			key++;
 		}
 	}
 }
@@ -187,6 +205,21 @@ void Server::ExitThread() {
 	}
 }
 
+void Server::SendCriticalPackets() {
+	sf::Packet packet;
+
+	for (std::map<int, CriticalPackets>::iterator it = criticalPackets.begin();it != criticalPackets.end();it++) {
+		packet << HEADER_SERVER::CRITICALPACKAGE_S;
+		packet << it->second.local;
+		packet << it->second.message;
+		udpSocket->udpStatus = udpSocket->Send(packet, sf::IpAddress::LocalHost, it->second.port);
+		it->second.timer->ResetTimer();
+	}
+}
+
+void Server::manageCriticalPackets() {
+
+}
 void Server::ServerLoop()
 {
 
@@ -200,6 +233,9 @@ void Server::ServerLoop()
 
 	std::thread tExit(&Server::ExitThread, this);
 	tExit.detach();
+
+	std::thread criticalPackages(&Server::SendCriticalPackets, this);
+	criticalPackages.detach();
 
 	std::thread tCheckInactivity(&Server::checkInactivity, this);
 	tCheckInactivity.detach();
@@ -254,6 +290,9 @@ void Server::ServerLoop()
 			
 
 				break;
+			case HEADER_PLAYER::CRITICALPACKAGE_P:
+				
+			
 
 
 
