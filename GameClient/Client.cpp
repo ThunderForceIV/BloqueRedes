@@ -32,7 +32,7 @@ void Client::manageCriticalPackage(sf::Packet &packet) {
 	packet >> message;
 	std::cout << "Se ha recibido un Paquete critico" << std::endl;
 	packet.clear();
-	packet << HEADER_GAMESTATE::CRITICALPACKAGE;
+	packet << HEADER_PLAYER::CRITICALPACKAGE_P;
 	packet << key;
 	packet << "respuesta";
 	udpSocket->udpStatus = udpSocket->Send(packet, sf::IpAddress::LocalHost, SERVER_PORT);

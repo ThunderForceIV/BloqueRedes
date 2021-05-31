@@ -24,7 +24,7 @@ struct CriticalPackets
 	unsigned short port;
 	sf::IpAddress ip;
 	Timer* timer = new Timer();
-	HEADER_GAMESTATE header = HEADER_GAMESTATE::CRITICALPACKAGE;
+	HEADER_PLAYER header = HEADER_PLAYER::CRITICALPACKAGE_P;
 	int local;
 	std::string message;
 

@@ -3,6 +3,8 @@
 
 int main()
 {
+	srand(time(NULL));
+
 	Server servidor;
 	
 	servidor.ServerLoop();

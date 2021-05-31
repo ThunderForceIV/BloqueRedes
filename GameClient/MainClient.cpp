@@ -90,6 +90,8 @@
 
 #include "Client.h"
 int main() {
+	srand(time(NULL));
+
 	Client cliente;
 	cliente.ClientLoop();
 	return 0;
