@@ -30,7 +30,6 @@ void Client::manageCriticalPackage(sf::Packet &packet) {
 	std::string message;
 	packet >> key;
 	packet >> message;
-	std::cout << "Se ha recibido un Paquete critico" << std::endl;
 	packet.clear();
 	packet << HEADER_PLAYER::CRITICALPACKAGE_P;
 	packet << key;

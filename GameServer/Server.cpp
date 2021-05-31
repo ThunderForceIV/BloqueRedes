@@ -214,8 +214,8 @@ void Server::SendCriticalPackets() {
 }
 
 void Server::manageCriticalPackets(int key, unsigned short port) {
-	std::map<int, CriticalPackets>::iterator it = criticalPackets.find(port);
-		if (it->second.local == key) {
+	std::map<int, CriticalPackets>::iterator it = criticalPackets.find(key);
+		if (it->second.local == key&&it->second.port == port) {
 			criticalPackets.erase(it->first);
 			std::cout << "Se ha borrado " << key << std::endl;
 		}
@@ -305,7 +305,7 @@ void Server::ServerLoop()
 				packet.clear();
 
 			
-
+				break;
 
 
 			default:
