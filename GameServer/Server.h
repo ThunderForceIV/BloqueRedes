@@ -31,7 +31,8 @@ public:
 
 	void SendCriticalPackets();
 
-	void manageCriticalPackets();
+
+	void manageCriticalPackets(int key, unsigned short port);
 
 	void ServerLoop();
 };

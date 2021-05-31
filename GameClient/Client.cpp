@@ -83,9 +83,11 @@ void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 					packet.clear();
 				}
 
-
+				break;
 			case HEADER_SERVER::CRITICALPACKAGE_S:
 				manageCriticalPackage(packet);
+				break;
+
 			}
 		}
 	

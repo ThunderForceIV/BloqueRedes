@@ -108,13 +108,8 @@ void Server::ManageChallenge_R(sf::Packet& packet, sf::IpAddress& ip, unsigned s
 		}
 	}
 	//ESTO SIRVE PARA LOS PAQUETES CRITICOS
-	if (addedClient) {
-		int key = 0;
-		for (std::map<unsigned short, PlayerInfo>::iterator it = clients.begin();it != clients.end();it++) {
-			fillCriticalMap(key, "Critical", it->first);
-			key++;
-		}
-	}
+
+
 }
 
 
@@ -206,20 +201,28 @@ void Server::ExitThread() {
 }
 
 void Server::SendCriticalPackets() {
-	sf::Packet packet;
-
-	for (std::map<int, CriticalPackets>::iterator it = criticalPackets.begin();it != criticalPackets.end();it++) {
-		packet << HEADER_SERVER::CRITICALPACKAGE_S;
-		packet << it->second.local;
-		packet << it->second.message;
-		udpSocket->udpStatus = udpSocket->Send(packet, sf::IpAddress::LocalHost, it->second.port);
-		it->second.timer->ResetTimer();
+	while (true) {
+		sf::Packet packet;
+		for (std::map<int, CriticalPackets>::iterator it = criticalPackets.begin();it != criticalPackets.end();it++) {
+			packet << HEADER_SERVER::CRITICALPACKAGE_S;
+			packet << it->second.local;
+			packet << it->second.message;
+			udpSocket->udpStatus = udpSocket->Send(packet, sf::IpAddress::LocalHost, it->second.port);
+			it->second.timer->ResetTimer();
+		}
 	}
 }
 
-void Server::manageCriticalPackets() {
+void Server::manageCriticalPackets(int key, unsigned short port) {
+	std::map<int, CriticalPackets>::iterator it = criticalPackets.find(port);
+		if (it->second.local == key) {
+			criticalPackets.erase(it->first);
+			std::cout << "Se ha borrado " << key << std::endl;
+		}
+	}
 
-}
+
+
 void Server::ServerLoop()
 {
 
@@ -228,6 +231,9 @@ void Server::ServerLoop()
 	int recieverInt;
 	int auxiliarPlayerSalt;
 	int auxiliarServerSalt;
+	int key = 0;
+	int keyPackage = 0;
+
 	std::string auxiliarMessage;
 	std::cout << "LLEGAMOS DON FERNANDITO";
 
@@ -281,17 +287,23 @@ void Server::ServerLoop()
 				break;
 			case HEADER_PLAYER::EXIT:
 				clients.erase(port);
-					
+				//criticalPackets.erase(port);
 				
 				for (std::map<unsigned short, PlayerInfo>::iterator it = this->clients.begin();it != clients.end();it++) {
 					SendMessage2AllClients("Un jugador se ha desconectado", it->first);
+					fillCriticalMap(key, "Critical", it->first);
+					key++;
 
 				}
-			
+				key = 0;
 
 				break;
 			case HEADER_PLAYER::CRITICALPACKAGE_P:
-				
+				std::cout << "Entra en el switch del server post recibir el akr";
+				packet >> keyPackage;
+				manageCriticalPackets(keyPackage, port);
+				packet.clear();
+
 			
 
 
