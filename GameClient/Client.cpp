@@ -85,6 +85,7 @@ void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 				break;
 			case HEADER_SERVER::CRITICALPACKAGE_S:
 				manageCriticalPackage(packet);
+				std::cout << "Se ha enviado AKM"<<std::endl;
 				break;
 
 			}

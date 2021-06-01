@@ -203,17 +203,19 @@ void Server::SendCriticalPackets() {
 			packet << HEADER_SERVER::CRITICALPACKAGE_S;
 			packet << it->second.local;
 			packet << it->second.message;
+			std::cout << "Se envia paquete critico a  " << it->second.port << " con la key: " << it->second.local << std::endl;
+
 			udpSocket->udpStatus = udpSocket->Send(packet, sf::IpAddress::LocalHost, it->second.port);
+
 			it->second.timer->ResetTimer();
 		}
-		std::this_thread::sleep_for(std::chrono::seconds(2));
+		std::this_thread::sleep_for(std::chrono::seconds(4));
 
 	}
 }
 
 void Server::manageCriticalPackets(int key, unsigned short port) {
 	servermtx.lock();
-	std::cout << "Se va a borrar paquete critico en  " << port << " con la key: " << key<<std::endl;
 	criticalPackets.erase(key);
 	servermtx.unlock();
 	}
