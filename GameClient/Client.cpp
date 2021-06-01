@@ -35,7 +35,7 @@ void Client::manageCriticalPackage(sf::Packet &packet) {
 	packet << key;
 	packet << "respuesta";
 	udpSocket->udpStatus = udpSocket->Send(packet, sf::IpAddress::LocalHost, SERVER_PORT);
-
+	packet.clear();
 }
 static float GetRandomFloat() {
 	static std::random_device rd;
@@ -102,6 +102,7 @@ void Client::SendHello()
 	sf::Packet packet;
 	while (!protocolConnected) {
 		this->clientSalt = rand() % MAX_64BITS;
+		std::cout << clientSalt;
 		packet << HEADER_PLAYER::HELLO;
 		packet << clientSalt;
 		udpSocket->udpStatus = udpSocket->Send(packet, sf::IpAddress::LocalHost, SERVER_PORT);

@@ -7,6 +7,8 @@ class Server
 	UDPSocket* udpSocket;
 	std::map<unsigned short, PlayerInfo> clients;
 	std::map<unsigned short, PlayerInfo> clientsWaiting;
+	std::mutex servermtx;
+	int localPacket;
 public:
 	sf::Packet packet;
 	sf::IpAddress ip;

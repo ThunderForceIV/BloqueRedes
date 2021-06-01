@@ -11,13 +11,14 @@ Server::~Server()
 }
 
 void Server::fillCriticalMap(int key, std::string message, unsigned short port) {
+	servermtx.lock();
 	CriticalPackets critical;
 	critical.ip = sf::IpAddress::LocalHost;
 	critical.port = port;
 	critical.local = key;
 	critical.message = message;
 	criticalPackets.insert(std::pair<int, CriticalPackets>(key, critical));
-
+	servermtx.unlock();
 
 }
 bool Server::IsClientInMap(unsigned short port)
@@ -119,23 +120,19 @@ void Server::RecieveClients() {
 	sf::Packet packet;
 	sf::IpAddress ip;
 	unsigned short port;
-	std::cout << "7" << std::endl;
 	while (true) {
 		udpSocket->udpStatus = udpSocket->Receive(packet, ip, port);
 		packet >> recieverInt;
-		std::cout << "5" << std::endl;
 		switch (recieverInt)
 		{
 		case HEADER_PLAYER::HELLO:
 			//Creamos el serversalt
 			//Preguntar donde guardar el client y como
 			//packet << HEADER_SERVER::CHALLENGE_Q << serverSalt << clientSalt<<challenge;
-			std::cout << "3" << std::endl;
 			ManageHello(packet, ip, port);
 			//Creamos el challengeç
 			packet << ManageChallenge();
 			udpSocket->udpStatus = udpSocket->Send(packet, ip, port);
-			std::cout << "2" << std::endl;
 
 			break;
 		case HEADER_PLAYER::CHALLENGE_R:
@@ -165,7 +162,6 @@ void Server::checkInactivity()
 		mtx.lock();
 		for (std::list<unsigned short>::iterator it = inactivityCheck.begin(); it != inactivityCheck.end(); ++it) {
 			clients.erase(*it);
-			std::cout << "Se ha desconectado ";
 			for (std::map<unsigned short, PlayerInfo>::iterator it = clients.begin();it != clients.end();it++) {
 				//Tenemos que avisar a los demás
 			}
@@ -210,15 +206,16 @@ void Server::SendCriticalPackets() {
 			udpSocket->udpStatus = udpSocket->Send(packet, sf::IpAddress::LocalHost, it->second.port);
 			it->second.timer->ResetTimer();
 		}
+		std::this_thread::sleep_for(std::chrono::seconds(2));
+
 	}
 }
 
 void Server::manageCriticalPackets(int key, unsigned short port) {
-	std::map<int, CriticalPackets>::iterator it = criticalPackets.find(key);
-		if (it->second.local == key&&it->second.port == port) {
-			criticalPackets.erase(it->first);
-			std::cout << "Se ha borrado " << key << std::endl;
-		}
+	servermtx.lock();
+	std::cout << "Se va a borrar paquete critico en  " << port << " con la key: " << key<<std::endl;
+	criticalPackets.erase(key);
+	servermtx.unlock();
 	}
 
 
@@ -299,11 +296,10 @@ void Server::ServerLoop()
 
 				break;
 			case HEADER_PLAYER::CRITICALPACKAGE_P:
-				std::cout << "Entra en el switch del server post recibir el akr";
 				packet >> keyPackage;
 				manageCriticalPackets(keyPackage, port);
 				packet.clear();
-
+				keyPackage = -1;
 			
 				break;
 
