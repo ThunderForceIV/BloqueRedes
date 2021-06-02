@@ -11,6 +11,7 @@
 #include <list>
 #include <mutex>
 #include <random>
+#include <vector>
 class UDPSocket
 {
 	sf::UdpSocket* udpSocket;

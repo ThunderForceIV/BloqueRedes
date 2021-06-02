@@ -100,6 +100,11 @@ void Server::ManageChallenge_R(sf::Packet& packet, sf::IpAddress& ip, unsigned s
 				packet << HEADER_SERVER::WELCOME;
 				packet << actualClientSalt;
 				packet << actualServerSalt;
+				it->second.position.x = rand() % CELL_WIDTH_WINDOW;
+				it->second.position.y = rand() % CELL_HEIGHT_WINDOW;
+				packet << it->second.position.x;
+				packet << it->second.position.y;
+				packet << rand() % CELL_HEIGHT_WINDOW;
 				if (!this->IsClientInMap(port)) {
 					clients.insert(std::pair<unsigned int, PlayerInfo>(port, it->second));
 				}

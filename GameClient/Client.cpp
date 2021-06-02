@@ -43,6 +43,14 @@ static float GetRandomFloat() {
 	static std::uniform_real_distribution<float> dis(0.f, 1.f);
 	return dis(gen);
 }
+
+void Client::ManageWelcome(sf::Packet& packet) {
+		packet >> clientSalt;
+	 packet >> serverSalt;
+	 packet >> position.x;
+	 packet >> position.y;
+	 std::cout << position.x <<" Position y   "<< position.y << std::endl;
+}
 void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 	sf::Packet packet;
 	sf::IpAddress ip;
@@ -53,7 +61,6 @@ void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 	while (true)
 	{
 		rndPacketLoss = GetRandomFloat();
-		std::cout << rndPacketLoss << std::endl;
 		udpSocket->udpStatus = udpSocket->Receive(packet, ip, port);
 
 		if (rndPacketLoss > PERCENT_PACKETLOSS) {
@@ -64,14 +71,13 @@ void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 
 				ManageChallenge_Q(packet, ip, port);
 				packet << ResolveChallenge(challengeNumber);
-				std::cout << ResolveChallenge(challengeNumber);
 
 				port = SERVER_PORT;
 				udpSocket->udpStatus = udpSocket->Send(packet, ip, port);
 
 				break;
 			case HEADER_SERVER::WELCOME:
-
+				ManageWelcome(packet);
 				userRegisted = true;
 				protocolConnected = true;
 				break;
@@ -153,7 +159,75 @@ void Client::SendingThread() {//Envia los paquetes
 	
 	}
 }
+void Client::DrawDungeon()
+{
+	sf::RenderWindow _window(sf::VideoMode(800, 600), "Game");
+	sf::RectangleShape shape(sf::Vector2f(DUNGEON_SIZE, DUNGEON_SIZE));
+	shape.setOutlineColor(sf::Color::Black);
+	shape.setOutlineThickness(2.f);
 
+	while (_window.isOpen())
+	{
+		sf::Event event;
+		while (_window.pollEvent(event))
+		{
+			switch (event.type)
+			{
+			case sf::Event::Closed:
+				_window.close();
+				//gameloop = false;
+				break;
+			case sf::Event::KeyPressed:
+				if (event.key.code == sf::Keyboard::Escape)
+				{
+					_window.close();
+					//gameloop = false;
+
+				}
+				if (event.key.code == sf::Keyboard::Up)
+				{
+					UpdateDungeonPosition(acumulationPosition.x, acumulationPosition.y - 1);
+
+				}
+				else if (event.key.code == sf::Keyboard::Down)
+				{
+					UpdateDungeonPosition(acumulationPosition.x, acumulationPosition.y + 1);
+				}
+				else if (event.key.code == sf::Keyboard::Right)
+				{
+					UpdateDungeonPosition(acumulationPosition.x + 1, acumulationPosition.y);
+
+				}
+				else if (event.key.code == sf::Keyboard::Left)
+				{
+					UpdateDungeonPosition(acumulationPosition.x-1, acumulationPosition.y);
+				}
+				
+				
+				break;
+			}
+		}
+		_window.clear();
+
+
+		for (int i = 0; i < CELL_WIDTH_WINDOW; i++)
+		{
+			for (int j = 0; j < CELL_HEIGHT_WINDOW; j++)
+			{
+				shape.setFillColor(sf::Color(90, 90, 90, 255));
+				shape.setPosition(sf::Vector2f(i * DUNGEON_SIZE, j * DUNGEON_SIZE));
+				_window.draw(shape);
+			}
+		}
+
+		shape.setFillColor(sf::Color::Red);
+		shape.setFillColor(sf::Color(0, 0, 255, 255));
+		shape.setPosition(sf::Vector2f(position.x * DUNGEON_SIZE, position.y * DUNGEON_SIZE));
+		_window.draw(shape);
+
+		_window.display();
+	}
+}
 void Client::ClientLoop()
 {
 
@@ -167,6 +241,38 @@ void Client::ClientLoop()
 	
 	while (true)
 	{
+	if (protocolConnected) {
+		if (!dungeonCreated) {
+			dungeonCreated = true;
+			std::thread drawDungeon(&Client::DrawDungeon, this);
+			drawDungeon.detach();
+			
+			std::thread tAccumulationMove(&Client::SendAcumulationPackets, this);
+			tAccumulationMove.detach();
+		}
+		}
+	}
+}
+void Client::UpdateDungeonPosition(int x, int y)
+{
+	acumulationPosition.x = x;
+	acumulationPosition.y = y;
+}
+
+
+void Client::SendAcumulationPackets() {
+	while (true) {
+		sf::Packet packet;
+		Accumulation accumulationMovement;
+		accumulationMovement.position = acumulationPosition;
+		accumulationMovement.id = accumulationVector.size();
+		accumulationVector.push_back(accumulationMovement);
+		packet << HEADER_GAMESTATE::MOVE;
+		packet << accumulationMovement.id;
+		packet << acumulationPosition.x;
+		packet << acumulationPosition.y;
+		udpSocket->udpStatus = udpSocket->Send(packet, sf::IpAddress::LocalHost, SERVER_PORT);
+		std::this_thread::sleep_for(std::chrono::milliseconds(1300));
 
 	}
 }
