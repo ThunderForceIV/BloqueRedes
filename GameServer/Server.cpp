@@ -114,7 +114,9 @@ void Server::ManageChallenge_R(sf::Packet& packet, sf::IpAddress& ip, unsigned s
 }
 
 
-
+float Server::GetRTT(int key) {
+	return criticalPackets[key].timer->GetMilisDuration();
+}
 void Server::RecieveClients() {
 	int recieverInt;
 	sf::Packet packet;
@@ -162,10 +164,7 @@ void Server::checkInactivity()
 		mtx.lock();
 		for (std::list<unsigned short>::iterator it = inactivityCheck.begin(); it != inactivityCheck.end(); ++it) {
 			clients.erase(*it);
-			for (std::map<unsigned short, PlayerInfo>::iterator it = clients.begin();it != clients.end();it++) {
-				//Tenemos que avisar a los demás
-			}
-			
+		
 
 		}
 		mtx.unlock();
@@ -203,8 +202,9 @@ void Server::SendCriticalPackets() {
 			packet << HEADER_SERVER::CRITICALPACKAGE_S;
 			packet << it->second.local;
 			packet << it->second.message;
-			std::cout << "Se envia paquete critico a  " << it->second.port << " con la key: " << it->second.local << std::endl;
-
+			if (it == criticalPackets.begin()) {
+				std::cout << "Se envia paquete critico a  " << it->second.port << " con la key: " << it->second.local << std::endl;
+			}
 			udpSocket->udpStatus = udpSocket->Send(packet, sf::IpAddress::LocalHost, it->second.port);
 
 			it->second.timer->ResetTimer();
@@ -216,6 +216,7 @@ void Server::SendCriticalPackets() {
 
 void Server::manageCriticalPackets(int key, unsigned short port) {
 	servermtx.lock();
+	std::cout << "El paquete critico ha tardado "<<GetRTT(key)<<std::endl;
 	criticalPackets.erase(key);
 	servermtx.unlock();
 	}

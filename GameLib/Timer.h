@@ -12,4 +12,5 @@ public:
 
 	void ResetTimer();
 	unsigned int GetDuration();
+	float GetMilisDuration();
 };

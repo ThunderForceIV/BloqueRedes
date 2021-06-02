@@ -24,6 +24,7 @@ public:
 	void ManageChallenge_R(sf::Packet& packet, sf::IpAddress& ip, unsigned short& port);
 	int ManageChallenge();
 	bool ResolveChallenge(int clientAnswer, int clientQuestion);
+	float GetRTT(int key);
 	void RecieveClients();
 	void checkInactivity();
 	void ExitThread();

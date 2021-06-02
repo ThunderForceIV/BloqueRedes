@@ -20,3 +20,10 @@ unsigned int Timer::GetDuration()
 
 	return duration.count() * std::chrono::milliseconds::period::num / std::chrono::milliseconds::period::den;
 }
+float Timer::GetMilisDuration()
+{
+	timer_end = std::chrono::system_clock::now();
+	std::chrono::duration<float, std::milli>duration = timer_end - timer_start;
+
+	return duration.count();
+}
