@@ -31,6 +31,7 @@ public:
 	int ResolveChallenge(int challengeNumber);
 	void manageCriticalPackage(sf::Packet& packet);
 	void ManageWelcome(sf::Packet& packet);
+	void ManageMovement(sf::Packet& packet);
 	void RecievingThread();
 	void SendHello();
 	void SendingThread();

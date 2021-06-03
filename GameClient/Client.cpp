@@ -51,6 +51,22 @@ void Client::ManageWelcome(sf::Packet& packet) {
 	 packet >> position.y;
 	 std::cout << position.x <<" Position y   "<< position.y << std::endl;
 }
+
+void Client::ManageMovement(sf::Packet& packet) {
+	int x = 0,  y = 0, auxiliar = 0;
+	packet >> auxiliar;
+	packet >> x;
+	packet >> y;
+	
+	position.x = x;
+	position.y = y;
+
+	clientMtx.lock();
+	accumulationVector.erase(accumulationVector.begin() + auxiliar);
+	clientMtx.unlock();
+
+
+}
 void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 	sf::Packet packet;
 	sf::IpAddress ip;
@@ -93,8 +109,11 @@ void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 				manageCriticalPackage(packet);
 				std::cout << "Se ha enviado AKM"<<std::endl;
 				break;
-
+			case HEADER_SERVER::MOVE_S:
+				ManageMovement(packet);
+				break;
 			}
+			
 		}
 	
 		
@@ -118,6 +137,7 @@ void Client::SendHello()
 	
 	}
 }
+
 void Client::SendingThread() {//Envia los paquetes
 	sf::Packet packet;
 	sf::IpAddress ip = sf::IpAddress::LocalHost;
@@ -267,7 +287,7 @@ void Client::SendAcumulationPackets() {
 		accumulationMovement.position = acumulationPosition;
 		accumulationMovement.id = accumulationVector.size();
 		accumulationVector.push_back(accumulationMovement);
-		packet << HEADER_GAMESTATE::MOVE;
+		packet << HEADER_PLAYER::MOVE_P;
 		packet << accumulationMovement.id;
 		packet << acumulationPosition.x;
 		packet << acumulationPosition.y;

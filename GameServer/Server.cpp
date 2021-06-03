@@ -104,7 +104,6 @@ void Server::ManageChallenge_R(sf::Packet& packet, sf::IpAddress& ip, unsigned s
 				it->second.position.y = rand() % CELL_HEIGHT_WINDOW;
 				packet << it->second.position.x;
 				packet << it->second.position.y;
-				packet << rand() % CELL_HEIGHT_WINDOW;
 				if (!this->IsClientInMap(port)) {
 					clients.insert(std::pair<unsigned int, PlayerInfo>(port, it->second));
 				}
@@ -118,7 +117,30 @@ void Server::ManageChallenge_R(sf::Packet& packet, sf::IpAddress& ip, unsigned s
 
 }
 
+void Server::ManageMove(sf::Packet& packet, unsigned short& port) {
+	int x = 0, y = 0, auxiliar = 0;
+	packet >> auxiliar;
+	packet >> x;
+	packet >> y;
+	auto it = clients.find(port);
+	if (auxiliar < it->second.accumulationMovement.size()) {
+	}
+	else{
+		Accumulation acumulationAuxiliar;
+		acumulationAuxiliar.id = auxiliar;
+		acumulationAuxiliar.position.x = x;
+		acumulationAuxiliar.position.y = y;
+		it->second.accumulationMovement.push_back(acumulationAuxiliar);
+		std::cout << "ENTRAMOS";
+		packet.clear();
+		packet << HEADER_SERVER::MOVE_S;
+		packet << auxiliar;
+		packet << x;
+		packet << y;
+		udpSocket->udpStatus = udpSocket->Send(packet, sf::IpAddress::LocalHost, it->first);
+	}
 
+}
 float Server::GetRTT(int key) {
 	return criticalPackets[key].timer->GetMilisDuration();
 }
@@ -146,6 +168,7 @@ void Server::RecieveClients() {
 			ManageChallenge_R(packet, ip, port);
 			
 			break;
+		
 		default:
 			break;
 		}
@@ -311,7 +334,10 @@ void Server::ServerLoop()
 			
 				break;
 
-
+			case HEADER_PLAYER::MOVE_P:
+				ManageMove(packet,port);
+				std::cout << "ASLDKALDKLA";
+				break;
 			default:
 				break;
 			}

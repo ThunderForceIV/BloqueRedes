@@ -15,6 +15,8 @@ public:
 	sf::Vector2i position;
 	int lives;
 	Timer* lastConnection;
+	Vector2D acumulationPosition;
+	std::vector<Accumulation>accumulationMovement;
 	PlayerInfo();
 	~PlayerInfo();
 };
@@ -27,6 +29,7 @@ struct CriticalPackets
 	HEADER_PLAYER header = HEADER_PLAYER::CRITICALPACKAGE_P;
 	int local;
 	std::string message;
+
 
 
 };
