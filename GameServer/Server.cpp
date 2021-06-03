@@ -1,5 +1,13 @@
 #include "Server.h"
 
+float Server::AverageRtt()
+{
+	double average = std::accumulate(averageRtt.begin(), averageRtt.end(), 0.0) / averageRtt.size();
+	if (averageRtt.size() == 0) average = 0;
+
+	return average;
+}
+
 Server::Server()
 {
 	this->udpSocket = new UDPSocket();
@@ -100,8 +108,9 @@ void Server::ManageChallenge_R(sf::Packet& packet, sf::IpAddress& ip, unsigned s
 				packet << HEADER_SERVER::WELCOME;
 				packet << actualClientSalt;
 				packet << actualServerSalt;
-				it->second.position.x = rand() % CELL_WIDTH_WINDOW;
-				it->second.position.y = rand() % CELL_HEIGHT_WINDOW;
+				it->second.position.x = rand() % CELL_HEIGHT_WINDOW;
+				it->second.position.y = rand() % CELL_WIDTH_WINDOW;
+				
 				packet << it->second.position.x;
 				packet << it->second.position.y;
 				if (!this->IsClientInMap(port)) {
@@ -130,20 +139,19 @@ void Server::ManageMove(sf::Packet& packet, unsigned short& port) {
 		acumulationAuxiliar.id = auxiliar;
 		acumulationAuxiliar.position.x = x;
 		acumulationAuxiliar.position.y = y;
+		servermtx.lock();
 		it->second.accumulationMovement.push_back(acumulationAuxiliar);
+		servermtx.unlock();
 		std::cout << "ENTRAMOS";
 		packet.clear();
-		packet << HEADER_SERVER::MOVE_S;
-		packet << auxiliar;
-		packet << x;
-		packet << y;
-		udpSocket->udpStatus = udpSocket->Send(packet, sf::IpAddress::LocalHost, it->first);
+		
 	}
 
 }
 float Server::GetRTT(int key) {
 	return criticalPackets[key].timer->GetMilisDuration();
 }
+
 void Server::RecieveClients() {
 	int recieverInt;
 	sf::Packet packet;
@@ -205,6 +213,7 @@ void Server::checkInactivity()
 
 
 }
+
 void Server::ExitThread() {
 	std::string message;
 
@@ -273,6 +282,8 @@ void Server::ServerLoop()
 
 	std::thread tCheckInactivity(&Server::checkInactivity, this);
 	tCheckInactivity.detach();
+
+	
 	while (true)
 	{
 		udpSocket->udpStatus = udpSocket->Receive(packet, ip, port);
@@ -335,8 +346,12 @@ void Server::ServerLoop()
 				break;
 
 			case HEADER_PLAYER::MOVE_P:
+				if (!playerCanMove) {
+					playerCanMove = true;
+					std::thread tPlayerMovement(&Server::SendClientsPositions, this);
+					tPlayerMovement.detach();
+				}
 				ManageMove(packet,port);
-				std::cout << "ASLDKALDKLA";
 				break;
 			default:
 				break;
@@ -350,3 +365,23 @@ void Server::ServerLoop()
 	}
 }
 
+void Server::SendClientsPositions() {
+	while (true) {
+		sf::Packet packet;
+		servermtx.lock();
+
+		for (std::map<unsigned short, PlayerInfo>::iterator it = clients.begin();it != clients.end();it++) {
+			if (it->second.accumulationMovement.size() != 0) {
+				packet << HEADER_SERVER::MOVE_S;
+				packet << it->second.accumulationMovement[it->second.accumulationMovement.size() - 1].id;
+				packet << it->second.accumulationMovement[it->second.accumulationMovement.size() - 1].position.x;
+				packet << it->second.accumulationMovement[it->second.accumulationMovement.size() - 1].position.y;
+				it->second.accumulationMovement.clear();
+				udpSocket->udpStatus = udpSocket->Send(packet, sf::IpAddress::LocalHost, it->first);
+				packet.clear();
+			}
+		}
+		servermtx.unlock();
+
+	}
+}

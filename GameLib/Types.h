@@ -34,10 +34,7 @@ enum HEADER_SERVER
 	MOVE_S,
 };
 
-enum HEADER_GAMESTATE
-{
-	MOVE,
-};
+
 struct Vector2D {
 	int x, y;
 };

@@ -9,12 +9,14 @@ class Server
 	std::map<unsigned short, PlayerInfo> clientsWaiting;
 	std::mutex servermtx;
 	int localPacket;
+	std::vector<float>averageRtt;
 public:
+	bool playerCanMove = false;
 	sf::Packet packet;
 	sf::IpAddress ip;
 	unsigned short port;
 	std::map<int, CriticalPackets>criticalPackets;
-
+	float AverageRtt();
 	Server();
 	~Server();
 	void fillCriticalMap(int key, std::string message, unsigned short port);
@@ -39,6 +41,7 @@ public:
 	void manageCriticalPackets(int key, unsigned short port);
 
 	void ServerLoop();
+	void SendClientsPositions();
 };
 
 

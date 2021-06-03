@@ -12,6 +12,7 @@
 #include <mutex>
 #include <random>
 #include <vector>
+#include <numeric>
 class UDPSocket
 {
 	sf::UdpSocket* udpSocket;

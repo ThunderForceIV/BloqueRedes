@@ -37,6 +37,7 @@ void Client::manageCriticalPackage(sf::Packet &packet) {
 	udpSocket->udpStatus = udpSocket->Send(packet, sf::IpAddress::LocalHost, SERVER_PORT);
 	packet.clear();
 }
+
 static float GetRandomFloat() {
 	static std::random_device rd;
 	static std::mt19937 gen(rd());
@@ -50,6 +51,8 @@ void Client::ManageWelcome(sf::Packet& packet) {
 	 packet >> position.x;
 	 packet >> position.y;
 	 std::cout << position.x <<" Position y   "<< position.y << std::endl;
+	 acumulationPosition = position;
+
 }
 
 void Client::ManageMovement(sf::Packet& packet) {
@@ -207,20 +210,27 @@ void Client::DrawDungeon()
 				if (event.key.code == sf::Keyboard::Up)
 				{
 					UpdateDungeonPosition(acumulationPosition.x, acumulationPosition.y - 1);
+					position.y -= 1;
+
 
 				}
 				else if (event.key.code == sf::Keyboard::Down)
 				{
 					UpdateDungeonPosition(acumulationPosition.x, acumulationPosition.y + 1);
+					position.y += 1;
+
 				}
 				else if (event.key.code == sf::Keyboard::Right)
 				{
 					UpdateDungeonPosition(acumulationPosition.x + 1, acumulationPosition.y);
+					position.x += 1;
 
 				}
 				else if (event.key.code == sf::Keyboard::Left)
 				{
 					UpdateDungeonPosition(acumulationPosition.x-1, acumulationPosition.y);
+					position.x -= 1;
+
 				}
 				
 				
@@ -292,6 +302,7 @@ void Client::SendAcumulationPackets() {
 		packet << acumulationPosition.x;
 		packet << acumulationPosition.y;
 		udpSocket->udpStatus = udpSocket->Send(packet, sf::IpAddress::LocalHost, SERVER_PORT);
+		packet.clear();
 		std::this_thread::sleep_for(std::chrono::milliseconds(1300));
 
 	}
