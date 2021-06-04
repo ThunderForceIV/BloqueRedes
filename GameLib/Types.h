@@ -38,7 +38,10 @@ enum HEADER_SERVER
 struct Vector2D {
 	int x, y;
 };
-
+struct enemy {
+	sf::Vector2i position;
+	unsigned short port;
+};
 struct Accumulation {
 	Vector2D position;
 	int id;

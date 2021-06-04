@@ -113,12 +113,13 @@ void Server::ManageChallenge_R(sf::Packet& packet, sf::IpAddress& ip, unsigned s
 				
 				packet << it->second.position.x;
 				packet << it->second.position.y;
-				if (!this->IsClientInMap(port)) {
-					clients.insert(std::pair<unsigned int, PlayerInfo>(port, it->second));
-				}
+				FillEnemyOfNewPlayer(port, it->second.position);
+				clients.insert(std::pair<unsigned int, PlayerInfo>(port, it->second));
+				
 				udpSocket->udpStatus = udpSocket->Send(packet, ip, port);
-
+				FillEnemyToNewPlayer(port);
 			}
+
 		}
 	}
 	//ESTO SIRVE PARA LOS PAQUETES CRITICOS
@@ -126,6 +127,29 @@ void Server::ManageChallenge_R(sf::Packet& packet, sf::IpAddress& ip, unsigned s
 
 }
 
+void Server::FillEnemyOfNewPlayer(unsigned short port, sf::Vector2i position) {
+	enemy auxiliarEnemy;
+	auxiliarEnemy.port = port;
+	auxiliarEnemy.position = position;
+	for (std::map<unsigned short, PlayerInfo>::iterator it = clients.begin();it != clients.end();it++) {
+		it->second.enemyPositions.push_back(auxiliarEnemy);
+	}
+}
+
+void Server::FillEnemyToNewPlayer(unsigned short port) {
+	auto it = clients.find(port);
+	enemy auxiliarEnemy;
+	
+	for (std::map<unsigned short, PlayerInfo>::iterator it2 = clients.begin();it2 != clients.end();it2++) {
+		if (it2->first != port) {
+			auxiliarEnemy.port = it2->first;
+			auxiliarEnemy.position = it2->second.position;
+			it->second.enemyPositions.push_back(auxiliarEnemy);
+
+		}
+
+	}
+}
 void Server::ManageMove(sf::Packet& packet, unsigned short& port) {
 	int x = 0, y = 0, auxiliar = 0;
 	packet >> auxiliar;

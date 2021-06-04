@@ -17,9 +17,10 @@ public:
 	Timer* lastConnection;
 	Vector2D acumulationPosition;
 	std::vector<Accumulation>accumulationMovement;
-	std::vector<Vector2D>playerPositions;
+	std::vector<enemy>enemyPositions;
 	PlayerInfo();
 	~PlayerInfo();
+
 };
 
 struct CriticalPackets
