@@ -3,13 +3,30 @@
 Client::Client()
 {
 	udpSocket = new UDPSocket();
+	clientSalt = rand() % MAX_64BITS;
+
 }
 
 Client::~Client()
 {
 }
 
-
+void Client::Username() {
+	std::cout << "Introduce your username: ";
+	std::cin >> username;
+}
+void Client::JoinGame() {
+	std::string confirmation;
+	std::cout << std::endl << "Do you want to join or create a game? (y/n): ";
+	std::cin >> confirmation;
+	if (confirmation == "y" || confirmation == "Y") {
+		gamerunning = true;
+		system("cls");
+	}
+	else {
+		exit(0);
+	}
+}
 void Client::ManageChallenge_Q(sf::Packet &packet, sf::IpAddress &ip, unsigned short &port) {
 	packet >> clientSalt;
 	packet >> serverSalt;
@@ -98,6 +115,17 @@ void Client::ManageEnemyPos(sf::Packet& packet) {
 	clientMtx.unlock();
 
 }
+void Client::ManageDisconnect() {
+	udpSocket->unBind();
+	delete[] udpSocket;
+	gamerunning = false;
+	system("cls");
+	std::cout << "You have been disconnected from the server due to inactivity";
+
+}
+
+
+
 void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 	sf::Packet packet;
 	sf::IpAddress ip;
@@ -151,6 +179,8 @@ void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 		case::HEADER_SERVER::ENEMYPOS_S:
 			ManageEnemyPos(packet);
 			break;
+		case::HEADER_SERVER::DISCONNECT:
+			ManageDisconnect();
 		}
 	
 
@@ -164,13 +194,19 @@ void Client::SendHello()
 	std::string msg;
 	sf::Packet packet;
 	while (!protocolConnected) {
-		this->clientSalt = rand() % MAX_64BITS;
-		std::cout << clientSalt;
 		packet << HEADER_PLAYER::HELLO;
 		packet << clientSalt;
+		packet << username;
 		udpSocket->udpStatus = udpSocket->Send(packet, sf::IpAddress::LocalHost, SERVER_PORT);
-		std::cout << "Se ha enviado Hello al server" << std::endl;
-		std::this_thread::sleep_for(std::chrono::milliseconds(300));
+		if (udpSocket->udpStatus != sf::Socket::Done) {
+			std::cout << "El paquete no ha salido del cliente";
+		}
+		else {
+			std::cout << "Hello has been sent correctly ClientSalt: " <<clientSalt <<" Username: " <<username <<std::endl;
+
+		
+			packet.clear();
+		}		std::this_thread::sleep_for(std::chrono::milliseconds(300));
 	
 	}
 }
@@ -303,6 +339,8 @@ void Client::DrawDungeon()
 void Client::ClientLoop()
 {
 
+	Username();
+	JoinGame();
 	std::thread sendHello(&Client::SendHello,this);
 	sendHello.detach();
 	std::thread tRecieve(&Client::RecievingThread, this);

@@ -1,7 +1,7 @@
 #pragma once
 const int MAX_64BITS = 2147483647;
 const int SERVER_PORT = 50000;
-const int PLAYER_DESCONNECTION = 30;
+const int PLAYER_DESCONNECTION = 5;
 const int SERVER_DESCONNECTION = 30;
 const float PERCENT_PACKETLOSS = 0.1f;
 
@@ -33,6 +33,7 @@ enum HEADER_SERVER
 	CRITICALPACKAGE_S,
 	MOVE_S,
 	ENEMYPOS_S,
+	DISCONNECT,
 };
 
 

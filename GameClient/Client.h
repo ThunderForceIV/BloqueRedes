@@ -4,10 +4,8 @@
 struct Client
 {
 	UDPSocket* udpSocket;
-	
-public:
 	bool protocolConnected = false, dungeonCreated = false;
-
+	bool gamerunning = true;
 	int serverSalt;
 	int clientSalt;
 	int challengeNumber;
@@ -17,22 +15,27 @@ public:
 	std::vector<enemy>enemyPos;
 	//Mutex Client
 	std::mutex clientMtx;
+	std::string username;
 
 	//Position Player
 	Vector2D position;
-
 	//Acumulation
 	Vector2D acumulationPosition;
 	std::vector<Accumulation>accumulationVector;
+public:
+	
 	
 	Client();
 	~Client();
+	void Username();
+	void JoinGame();
 	void ManageChallenge_Q(sf::Packet& packet, sf::IpAddress& ip, unsigned short& port);
 	int ResolveChallenge(int challengeNumber);
 	void manageCriticalPackage(sf::Packet& packet);
 	void ManageWelcome(sf::Packet& packet);
 	void ManageMovement(sf::Packet& packet);
 	void ManageEnemyPos(sf::Packet& packet);
+	void ManageDisconnect();
 	void RecievingThread();
 	void SendHello();
 	void SendingThread();
