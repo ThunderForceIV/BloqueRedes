@@ -150,6 +150,29 @@ void Server::FillEnemyToNewPlayer(unsigned short port) {
 
 	}
 }
+void Server::SendEnemyPos() {
+	while (true) {
+		sf::Packet packet;
+		servermtx.lock();
+		
+		for (std::map<unsigned short, PlayerInfo>::iterator it = clients.begin();it != clients.end();it++) {
+			for (int i = 0;i < it->second.enemyPositions.size();i++) {
+				packet << ENEMYPOS_S;
+				packet << it->second.enemyPositions[i].port;
+				packet << it->second.enemyPositions[i].position.x;
+				packet << it->second.enemyPositions[i].position.y;
+
+				udpSocket->udpStatus = udpSocket->Send(packet, sf::IpAddress::LocalHost, it->first);
+				packet.clear();
+
+			}
+		}
+
+		servermtx.unlock();
+		std::this_thread::sleep_for(std::chrono::seconds(1));
+
+	}
+}
 void Server::ManageMove(sf::Packet& packet, unsigned short& port) {
 	int x = 0, y = 0, auxiliar = 0;
 	packet >> auxiliar;
@@ -166,7 +189,6 @@ void Server::ManageMove(sf::Packet& packet, unsigned short& port) {
 		servermtx.lock();
 		it->second.accumulationMovement.push_back(acumulationAuxiliar);
 		servermtx.unlock();
-		std::cout << "ENTRAMOS";
 		packet.clear();
 		
 	}
@@ -307,6 +329,8 @@ void Server::ServerLoop()
 	std::thread tCheckInactivity(&Server::checkInactivity, this);
 	tCheckInactivity.detach();
 
+	std::thread tSendEnemyPos(&Server::SendEnemyPos, this);
+	tSendEnemyPos.detach();
 	
 	while (true)
 	{
@@ -388,7 +412,17 @@ void Server::ServerLoop()
 
 	}
 }
-
+void Server::ModifyEnemyPositions(unsigned short port, sf::Vector2i positions) {
+	for (std::map<unsigned short, PlayerInfo>::iterator it = clients.begin();it != clients.end();it++) {
+		if (port != it->first) {
+			for (int i = 0;i < it->second.enemyPositions.size();i++) {
+				if (it->second.enemyPositions[i].port == port) {
+					it->second.enemyPositions[i].position = positions;
+				}
+			}
+		}
+	}
+}
 void Server::SendClientsPositions() {
 	while (true) {
 		sf::Packet packet;
@@ -400,7 +434,10 @@ void Server::SendClientsPositions() {
 				packet << it->second.accumulationMovement[it->second.accumulationMovement.size() - 1].id;
 				packet << it->second.accumulationMovement[it->second.accumulationMovement.size() - 1].position.x;
 				packet << it->second.accumulationMovement[it->second.accumulationMovement.size() - 1].position.y;
+				it->second.position.x = it->second.accumulationMovement[it->second.accumulationMovement.size() - 1].position.x;
+				it->second.position.y = it->second.accumulationMovement[it->second.accumulationMovement.size() - 1].position.y;
 				it->second.accumulationMovement.clear();
+				ModifyEnemyPositions(it->first, it->second.position);
 				udpSocket->udpStatus = udpSocket->Send(packet, sf::IpAddress::LocalHost, it->first);
 				packet.clear();
 			}

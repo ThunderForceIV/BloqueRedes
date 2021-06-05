@@ -70,6 +70,34 @@ void Client::ManageMovement(sf::Packet& packet) {
 
 
 }
+void Client::ManageEnemyPos(sf::Packet& packet) {
+	unsigned short ipLocal;
+	bool isInVector = false;
+	sf::Vector2i positionAuxiliar;
+	packet >> ipLocal;
+	packet >> positionAuxiliar.x;
+	packet >> positionAuxiliar.y;
+	clientMtx.lock();
+	for (int i = 0; i < enemyPos.size();i++) {
+		if (ipLocal == enemyPos[i].port) {
+			enemyPos[i].position.x = positionAuxiliar.x;
+			enemyPos[i].position.y = positionAuxiliar.y;
+			isInVector = true;
+			std::cout << "Enemy Pos X: " << enemyPos[i].position.x << " Enemy Pos Y: " << enemyPos[i].position.y << std::endl;
+
+		}
+	}
+	if (isInVector == false) {
+		enemy auxiliar;
+		auxiliar.port = ipLocal;
+		auxiliar.position.x = positionAuxiliar.x;
+		auxiliar.position.y = positionAuxiliar.y;
+		enemyPos.push_back(auxiliar);
+	}
+	isInVector = false;
+	clientMtx.unlock();
+
+}
 void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 	sf::Packet packet;
 	sf::IpAddress ip;
@@ -82,49 +110,55 @@ void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 		rndPacketLoss = GetRandomFloat();
 		udpSocket->udpStatus = udpSocket->Receive(packet, ip, port);
 
-		if (rndPacketLoss > PERCENT_PACKETLOSS) {
-			packet >> recieverInt;
-			switch (recieverInt) {
-			case HEADER_SERVER::CHALLENGE_Q:
+
+		packet >> recieverInt;
+		switch (recieverInt) {
+		case HEADER_SERVER::CHALLENGE_Q:
 
 
-				ManageChallenge_Q(packet, ip, port);
-				packet << ResolveChallenge(challengeNumber);
+			ManageChallenge_Q(packet, ip, port);
+			packet << ResolveChallenge(challengeNumber);
 
-				port = SERVER_PORT;
-				udpSocket->udpStatus = udpSocket->Send(packet, ip, port);
+			port = SERVER_PORT;
+			udpSocket->udpStatus = udpSocket->Send(packet, ip, port);
 
-				break;
-			case HEADER_SERVER::WELCOME:
-				ManageWelcome(packet);
-				userRegisted = true;
-				protocolConnected = true;
-				break;
-			case HEADER_SERVER::GENERICMSG_S:
+			break;
+		case HEADER_SERVER::WELCOME:
+			ManageWelcome(packet);
+			userRegisted = true;
+			protocolConnected = true;
+			break;
+		case HEADER_SERVER::GENERICMSG_S:
+			if (rndPacketLoss > PERCENT_PACKETLOSS) {
 				packet >> message;
 				if (udpSocket->udpStatus == sf::Socket::Done) {
 					std::cout << std::endl << "Has recibido " << message << "." << std::endl;
 					packet.clear();
 				}
-
-				break;
-			case HEADER_SERVER::CRITICALPACKAGE_S:
-				manageCriticalPackage(packet);
-				std::cout << "Se ha enviado AKM"<<std::endl;
-				break;
-			case HEADER_SERVER::MOVE_S:
-				ManageMovement(packet);
-				break;
 			}
-			
+			else {
+				std::cout << "Se ha perdido el paquete";
+			}
+
+			break;
+		case HEADER_SERVER::CRITICALPACKAGE_S:
+			manageCriticalPackage(packet);
+			std::cout << "Se ha enviado AKM" << std::endl;
+			break;
+		case HEADER_SERVER::MOVE_S:
+			ManageMovement(packet);
+			break;
+		case::HEADER_SERVER::ENEMYPOS_S:
+			ManageEnemyPos(packet);
+			break;
 		}
 	
-		
-		else {
-			std::cout << "SE HA PERDIDO EL PAQUETE";
-		}
+
 	}
 }
+		
+		
+
 void Client::SendHello()
 {
 	std::string msg;
@@ -254,6 +288,14 @@ void Client::DrawDungeon()
 		shape.setFillColor(sf::Color(0, 0, 255, 255));
 		shape.setPosition(sf::Vector2f(position.x * DUNGEON_SIZE, position.y * DUNGEON_SIZE));
 		_window.draw(shape);
+
+		for (int i = 0;i < enemyPos.size();i++) {
+			shape.setFillColor(sf::Color::Red);
+			shape.setPosition(sf::Vector2f(enemyPos[i].position.x * DUNGEON_SIZE, enemyPos[i].position.y * DUNGEON_SIZE));
+			_window.draw(shape);
+
+
+		}
 
 		_window.display();
 	}

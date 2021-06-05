@@ -28,6 +28,7 @@ public:
 	int ManageChallenge();
 	bool ResolveChallenge(int clientAnswer, int clientQuestion);
 	void FillEnemyToNewPlayer(unsigned short port);
+	void SendEnemyPos();
 	void ManageMove(sf::Packet& packet, unsigned short& port);
 	float GetRTT(int key);
 	void RecieveClients();
@@ -43,6 +44,7 @@ public:
 	void manageCriticalPackets(int key, unsigned short port);
 
 	void ServerLoop();
+	void ModifyEnemyPositions(unsigned short port, sf::Vector2i positions);
 	void SendClientsPositions();
 };
 

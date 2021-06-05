@@ -14,7 +14,7 @@ public:
 	bool userRegisted = false;
 	bool firstTimeBro = false;
 	float rndPacketLoss;
-
+	std::vector<enemy>enemyPos;
 	//Mutex Client
 	std::mutex clientMtx;
 
@@ -32,6 +32,7 @@ public:
 	void manageCriticalPackage(sf::Packet& packet);
 	void ManageWelcome(sf::Packet& packet);
 	void ManageMovement(sf::Packet& packet);
+	void ManageEnemyPos(sf::Packet& packet);
 	void RecievingThread();
 	void SendHello();
 	void SendingThread();
