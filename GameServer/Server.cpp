@@ -19,14 +19,12 @@ Server::~Server()
 }
 
 void Server::fillCriticalMap(int key, std::string message, unsigned short port) {
-	servermtx.lock();
 	CriticalPackets critical;
 	critical.ip = sf::IpAddress::LocalHost;
 	critical.port = port;
 	critical.local = key;
 	critical.message = message;
 	criticalPackets.insert(std::pair<int, CriticalPackets>(key, critical));
-	servermtx.unlock();
 
 }
 bool Server::IsClientInMap(unsigned short port)
@@ -86,6 +84,7 @@ void Server::ManageChallenge_R(sf::Packet& packet, sf::IpAddress& ip, unsigned s
 	int clientAnswer;
 
 	bool addedClient = false;
+
 	for (std::map<unsigned short, PlayerInfo>::iterator it = clientsWaiting.begin();it != clientsWaiting.end();it++) {
 
 		if (it->first == port) {
@@ -122,6 +121,7 @@ void Server::ManageChallenge_R(sf::Packet& packet, sf::IpAddress& ip, unsigned s
 
 		}
 	}
+
 	//ESTO SIRVE PARA LOS PAQUETES CRITICOS
 
 
@@ -131,15 +131,17 @@ void Server::FillEnemyOfNewPlayer(unsigned short port, sf::Vector2i position) {
 	enemy auxiliarEnemy;
 	auxiliarEnemy.port = port;
 	auxiliarEnemy.position = position;
+
 	for (std::map<unsigned short, PlayerInfo>::iterator it = clients.begin();it != clients.end();it++) {
 		it->second.enemyPositions.push_back(auxiliarEnemy);
 	}
+
 }
 
 void Server::FillEnemyToNewPlayer(unsigned short port) {
 	auto it = clients.find(port);
 	enemy auxiliarEnemy;
-	
+
 	for (std::map<unsigned short, PlayerInfo>::iterator it2 = clients.begin();it2 != clients.end();it2++) {
 		if (it2->first != port) {
 			auxiliarEnemy.port = it2->first;
@@ -149,11 +151,11 @@ void Server::FillEnemyToNewPlayer(unsigned short port) {
 		}
 
 	}
+
 }
 void Server::SendEnemyPos() {
 	while (true) {
 		sf::Packet packet;
-		servermtx.lock();
 		
 		for (std::map<unsigned short, PlayerInfo>::iterator it = clients.begin();it != clients.end();it++) {
 			for (int i = 0;i < it->second.enemyPositions.size();i++) {
@@ -168,7 +170,6 @@ void Server::SendEnemyPos() {
 			}
 		}
 
-		servermtx.unlock();
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 
 	}
@@ -178,19 +179,23 @@ void Server::ManageMove(sf::Packet& packet, unsigned short& port) {
 	packet >> auxiliar;
 	packet >> x;
 	packet >> y;
-	auto it = clients.find(port);
-	if (auxiliar < it->second.accumulationMovement.size()) {
-	}
-	else{
-		Accumulation acumulationAuxiliar;
-		acumulationAuxiliar.id = auxiliar;
-		acumulationAuxiliar.position.x = x;
-		acumulationAuxiliar.position.y = y;
-		servermtx.lock();
-		it->second.accumulationMovement.push_back(acumulationAuxiliar);
-		servermtx.unlock();
-		packet.clear();
-		
+	if (clients.size() != 0) {
+		auto it = clients.find(port);
+
+		if (auxiliar < it->second.accumulationMovement.size()) {
+		}
+		else {
+
+			Accumulation acumulationAuxiliar;
+			acumulationAuxiliar.id = auxiliar;
+			acumulationAuxiliar.position.x = x;
+			acumulationAuxiliar.position.y = y;
+			servermtx.lock();
+			it->second.accumulationMovement.push_back(acumulationAuxiliar);
+			servermtx.unlock();
+			packet.clear();
+
+		}
 	}
 
 }
@@ -234,22 +239,27 @@ void Server::RecieveClients() {
 void Server::checkInactivity() 
 {
 	std::list<unsigned short> inactivityCheck;
+	sf::Packet packet;
 	std::mutex mtx;
 	while (true)
 	{
 		for (std::map<unsigned short, PlayerInfo>::iterator it = clients.begin();it != clients.end();it++) {
+			std::cout << it->second.lastConnection->GetDuration();
 			if (it->second.lastConnection->GetDuration() > PLAYER_DESCONNECTION)
 			{
 				inactivityCheck.push_back(it->first);
 			}
 		}
-		mtx.lock();
 		for (std::list<unsigned short>::iterator it = inactivityCheck.begin(); it != inactivityCheck.end(); ++it) {
+			packet << HEADER_SERVER::DISCONNECT;
+			auto it2 = clients.find(*it);
+			it2->second.playerSalt;
+			it2->second.serverSalt;
+			udpSocket->udpStatus = udpSocket->Send(packet, sf::IpAddress::LocalHost, *it);
 			clients.erase(*it);
-		
+			packet.clear();
 
 		}
-		mtx.unlock();
 		inactivityCheck.clear();
 
 		std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -318,7 +328,8 @@ void Server::ServerLoop()
 	int keyPackage = 0;
 
 	std::string auxiliarMessage;
-	std::cout << "LLEGAMOS DON FERNANDITO";
+	std::thread tCheckInactivity(&Server::checkInactivity, this);
+	tCheckInactivity.detach();
 
 	std::thread tExit(&Server::ExitThread, this);
 	tExit.detach();
@@ -326,8 +337,7 @@ void Server::ServerLoop()
 	std::thread criticalPackages(&Server::SendCriticalPackets, this);
 	criticalPackages.detach();
 
-	std::thread tCheckInactivity(&Server::checkInactivity, this);
-	tCheckInactivity.detach();
+
 
 	std::thread tSendEnemyPos(&Server::SendEnemyPos, this);
 	tSendEnemyPos.detach();
@@ -359,17 +369,17 @@ void Server::ServerLoop()
 				break;
 
 			case HEADER_PLAYER::GENERICMSG_P:
-			
-
-		
+					
 				packet >> auxiliarMessage;
+				if (clients.size() != 0) {
+					auto it = clients.find(port);
+					it->second.lastConnection->ResetTimer();
+				}
 				for (std::map<unsigned short, PlayerInfo>::iterator it = this->clients.begin();it != clients.end();it++) {
 					if (it->first != port) {
 						SendMessage2AllClients(auxiliarMessage, it->first);
 					}
-					else {
-						it->second.lastConnection->ResetTimer();
-					}
+					
 				}
 				break;
 			case HEADER_PLAYER::EXIT:
@@ -399,6 +409,10 @@ void Server::ServerLoop()
 					std::thread tPlayerMovement(&Server::SendClientsPositions, this);
 					tPlayerMovement.detach();
 				}
+				if (clients.size() != 0) {
+					auto it = clients.find(port);
+					it->second.lastConnection->ResetTimer();
+				}
 				ManageMove(packet,port);
 				break;
 			default:
@@ -415,9 +429,11 @@ void Server::ServerLoop()
 void Server::ModifyEnemyPositions(unsigned short port, sf::Vector2i positions) {
 	for (std::map<unsigned short, PlayerInfo>::iterator it = clients.begin();it != clients.end();it++) {
 		if (port != it->first) {
-			for (int i = 0;i < it->second.enemyPositions.size();i++) {
-				if (it->second.enemyPositions[i].port == port) {
-					it->second.enemyPositions[i].position = positions;
+			if (it->second.enemyPositions.size() != 0) {
+				for (int i = 0;i < it->second.enemyPositions.size();i++) {
+					if (it->second.enemyPositions[i].port == port) {
+						it->second.enemyPositions[i].position = positions;
+					}
 				}
 			}
 		}
@@ -426,7 +442,6 @@ void Server::ModifyEnemyPositions(unsigned short port, sf::Vector2i positions) {
 void Server::SendClientsPositions() {
 	while (true) {
 		sf::Packet packet;
-		servermtx.lock();
 
 		for (std::map<unsigned short, PlayerInfo>::iterator it = clients.begin();it != clients.end();it++) {
 			if (it->second.accumulationMovement.size() != 0) {
@@ -442,7 +457,6 @@ void Server::SendClientsPositions() {
 				packet.clear();
 			}
 		}
-		servermtx.unlock();
 
 	}
 }

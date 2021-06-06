@@ -95,13 +95,15 @@ void Client::ManageEnemyPos(sf::Packet& packet) {
 	packet >> positionAuxiliar.x;
 	packet >> positionAuxiliar.y;
 	clientMtx.lock();
-	for (int i = 0; i < enemyPos.size();i++) {
-		if (ipLocal == enemyPos[i].port) {
-			enemyPos[i].position.x = positionAuxiliar.x;
-			enemyPos[i].position.y = positionAuxiliar.y;
-			isInVector = true;
-			std::cout << "Enemy Pos X: " << enemyPos[i].position.x << " Enemy Pos Y: " << enemyPos[i].position.y << std::endl;
+	if (enemyPos.size() != 0) {
+		for (int i = 0; i < enemyPos.size();i++) {
+			if (ipLocal == enemyPos[i].port) {
+				enemyPos[i].position.x = positionAuxiliar.x;
+				enemyPos[i].position.y = positionAuxiliar.y;
+				isInVector = true;
+				std::cout << "Enemy Pos X: " << enemyPos[i].position.x << " Enemy Pos Y: " << enemyPos[i].position.y << std::endl;
 
+			}
 		}
 	}
 	if (isInVector == false) {
@@ -140,6 +142,7 @@ void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 
 
 		packet >> recieverInt;
+		
 		switch (recieverInt) {
 		case HEADER_SERVER::CHALLENGE_Q:
 
@@ -307,6 +310,7 @@ void Client::DrawDungeon()
 				break;
 			}
 		}
+		
 		_window.clear();
 
 
