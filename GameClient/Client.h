@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../GameLib/UDPSocket.h"
+#include "../GameLib/Timer.h"
 struct Client
 {
 	UDPSocket* udpSocket;
@@ -8,9 +9,13 @@ struct Client
 	bool gamerunning = true;
 	int serverSalt;
 	int clientSalt;
+	int auxiliarServerSalt;
+	int auxiliarClientSalt;
 	int challengeNumber;
 	bool userRegisted = false;
 	bool firstTimeBro = false;
+	Timer* serverDisconnected;
+	bool timerActivated = false;
 	float rndPacketLoss;
 	std::vector<enemy>enemyPos;
 	//Mutex Client
@@ -36,6 +41,8 @@ public:
 	void ManageMovement(sf::Packet& packet);
 	void ManageEnemyPos(sf::Packet& packet);
 	void ManageDisconnect();
+	void ManageResetGame(sf::Packet packet);
+
 	void RecievingThread();
 	void SendHello();
 	void SendingThread();

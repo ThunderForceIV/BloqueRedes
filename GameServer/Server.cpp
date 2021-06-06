@@ -107,8 +107,8 @@ void Server::ManageChallenge_R(sf::Packet& packet, sf::IpAddress& ip, unsigned s
 				packet << HEADER_SERVER::WELCOME;
 				packet << actualClientSalt;
 				packet << actualServerSalt;
-				it->second.position.x = rand() % CELL_HEIGHT_WINDOW;
-				it->second.position.y = rand() % CELL_WIDTH_WINDOW;
+				it->second.position.x = rand() % INITIALPOSPLAYER;
+				it->second.position.y = rand() % INITIALPOSPLAYER;
 				
 				packet << it->second.position.x;
 				packet << it->second.position.y;
@@ -255,6 +255,7 @@ void Server::checkInactivity()
 			auto it2 = clients.find(*it);
 			it2->second.playerSalt;
 			it2->second.serverSalt;
+
 			udpSocket->udpStatus = udpSocket->Send(packet, sf::IpAddress::LocalHost, *it);
 			clients.erase(*it);
 			packet.clear();
@@ -405,6 +406,8 @@ void Server::ServerLoop()
 
 			case HEADER_PLAYER::MOVE_P:
 				if (!playerCanMove) {
+					gameTime = new Timer;
+					
 					playerCanMove = true;
 					std::thread tPlayerMovement(&Server::SendClientsPositions, this);
 					tPlayerMovement.detach();
@@ -454,48 +457,64 @@ bool Server::CheckIfEnemyIsInPlayerPos(unsigned short port) {
 void Server::SendClientsPositions() {
 	while (true) {
 		sf::Packet packet;
-		int auxiliarCheck = 0;;
-		for (std::map<unsigned short, PlayerInfo>::iterator it = clients.begin();it != clients.end();it++) {
-			if (it->second.accumulationMovement.size() != 0) {
-				packet << HEADER_SERVER::MOVE_S;
-				packet << it->second.accumulationMovement[it->second.accumulationMovement.size() - 1].id;
-				
-				it->second.position.x = it->second.accumulationMovement[it->second.accumulationMovement.size() - 1].position.x;
-				it->second.position.y = it->second.accumulationMovement[it->second.accumulationMovement.size() - 1].position.y;
-				while (CheckIfEnemyIsInPlayerPos(it->first)) {
-					auxiliarCheck = rand() % 4;
-					switch (auxiliarCheck)
-					{
-					case 0:
-						it->second.position.x++;
-						break;
-					case 1:
-						it->second.position.x--;
-
-						break;
-					case 2:
-						it->second.position.y++;
-
-						break;
-					case 3:
-						it->second.position.y--;
-
-						break;
-
-					default:
-						break;
-					}
-				}
+		int auxiliarCheck = 0;
+		if (gameTime->GetDuration() > GAME_TIMER) {
+			for (std::map<unsigned short, PlayerInfo>::iterator it = clients.begin();it != clients.end();it++) {
+				it->second.accumulationMovement.clear();
+				packet << HEADER_SERVER::RESET_GAME;
+				packet << it->second.playerSalt;
+				packet << it->second.serverSalt;
+				it->second.position.x = rand() % INITIALPOSPLAYER;
+				it->second.position.y = rand() % INITIALPOSPLAYER;
 				packet << it->second.position.x;
 				packet << it->second.position.y;
-				auxiliarCheck = 2;
-				it->second.accumulationMovement.clear();
-				
-				ModifyEnemyPositions(it->first, it->second.position);
 				udpSocket->udpStatus = udpSocket->Send(packet, sf::IpAddress::LocalHost, it->first);
-				packet.clear();
+				gameTime->ResetTimer();
+
 			}
 		}
+		else {
+			for (std::map<unsigned short, PlayerInfo>::iterator it = clients.begin();it != clients.end();it++) {
+				if (it->second.accumulationMovement.size() != 0) {
+					packet << HEADER_SERVER::MOVE_S;
+					packet << it->second.accumulationMovement[it->second.accumulationMovement.size() - 1].id;
 
+					it->second.position.x = it->second.accumulationMovement[it->second.accumulationMovement.size() - 1].position.x;
+					it->second.position.y = it->second.accumulationMovement[it->second.accumulationMovement.size() - 1].position.y;
+					while (CheckIfEnemyIsInPlayerPos(it->first)) {
+						auxiliarCheck = rand() % 4;
+						switch (auxiliarCheck)
+						{
+						case 0:
+							it->second.position.x++;
+							break;
+						case 1:
+							it->second.position.x--;
+
+							break;
+						case 2:
+							it->second.position.y++;
+
+							break;
+						case 3:
+							it->second.position.y--;
+
+							break;
+
+						default:
+							break;
+						}
+					}
+					packet << it->second.position.x;
+					packet << it->second.position.y;
+					auxiliarCheck = 2;
+					it->second.accumulationMovement.clear();
+
+					ModifyEnemyPositions(it->first, it->second.position);
+					udpSocket->udpStatus = udpSocket->Send(packet, sf::IpAddress::LocalHost, it->first);
+					packet.clear();
+				}
+			}
+		}
 	}
 }

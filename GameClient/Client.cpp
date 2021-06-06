@@ -126,7 +126,19 @@ void Client::ManageDisconnect() {
 
 }
 
+void Client::ManageResetGame(sf::Packet packet) {
+	packet >> auxiliarClientSalt;
+	packet >> auxiliarServerSalt;
+	packet >> position.x;
+	packet >> position.y;
+	acumulationPosition.x = position.x;
+	acumulationPosition.y = position.y;
+	system("cls");
+	std::cout << "------------------------------------------------------------" << std::endl;
+	std::cout << "                         RESET GAME                         " << std::endl;
+	std::cout << "------------------------------------------------------------" << std::endl;
 
+}
 
 void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 	sf::Packet packet;
@@ -142,8 +154,11 @@ void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 
 
 		packet >> recieverInt;
-		
+		if (timerActivated == true) {
+			serverDisconnected->ResetTimer();
+		}
 		switch (recieverInt) {
+			
 		case HEADER_SERVER::CHALLENGE_Q:
 
 
@@ -158,6 +173,8 @@ void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 			ManageWelcome(packet);
 			userRegisted = true;
 			protocolConnected = true;
+			serverDisconnected = new Timer;
+			timerActivated = true;
 			break;
 		case HEADER_SERVER::GENERICMSG_S:
 			if (rndPacketLoss > PERCENT_PACKETLOSS) {
@@ -179,12 +196,18 @@ void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 		case HEADER_SERVER::MOVE_S:
 			ManageMovement(packet);
 			break;
-		case::HEADER_SERVER::ENEMYPOS_S:
+		case HEADER_SERVER::ENEMYPOS_S:
 			ManageEnemyPos(packet);
 			break;
-		case::HEADER_SERVER::DISCONNECT:
+		case HEADER_SERVER::DISCONNECT:
 			ManageDisconnect();
+			break;
+		case HEADER_SERVER::RESET_GAME:
+			ManageResetGame(packet);
+			break;
 		}
+		
+		
 	
 
 	}
@@ -356,6 +379,11 @@ void Client::ClientLoop()
 	while (true)
 	{
 	if (protocolConnected) {
+		if (timerActivated == true) {
+			if (serverDisconnected->GetDuration() > SERVER_DESCONNECTION) {
+				ManageDisconnect();
+			}
+		}
 		if (!dungeonCreated) {
 			dungeonCreated = true;
 			std::thread drawDungeon(&Client::DrawDungeon, this);

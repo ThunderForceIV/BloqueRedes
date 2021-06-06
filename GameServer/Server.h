@@ -10,6 +10,7 @@ class Server
 	std::mutex servermtx;
 	int localPacket;
 	std::vector<float>averageRtt;
+	Timer* gameTime;
 public:
 	bool playerCanMove = false;
 	sf::Packet packet;
