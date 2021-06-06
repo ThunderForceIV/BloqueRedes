@@ -28,7 +28,7 @@ public:
 	sf::Socket::Status Receive(sf::Packet&, sf::IpAddress&, unsigned short&);
 	sf::Socket::Status Send(sf::Packet, sf::IpAddress, unsigned short);
 	sf::Socket::Status Bind(unsigned short);
-
+	
 
 };
 

@@ -18,6 +18,7 @@ public:
 	Vector2D acumulationPosition;
 	std::vector<Accumulation>accumulationMovement;
 	std::vector<enemy>enemyPositions;
+	bool validatedClient = false;
 	PlayerInfo();
 	~PlayerInfo();
 

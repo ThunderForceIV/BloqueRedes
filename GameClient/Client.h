@@ -15,6 +15,7 @@ struct Client
 	bool userRegisted = false;
 	bool firstTimeBro = false;
 	Timer* serverDisconnected;
+	Timer* disconnected;
 	bool timerActivated = false;
 	float rndPacketLoss;
 	std::vector<enemy>enemyPos;
@@ -36,6 +37,7 @@ public:
 	void JoinGame();
 	void ManageChallenge_Q(sf::Packet& packet, sf::IpAddress& ip, unsigned short& port);
 	int ResolveChallenge(int challengeNumber);
+	void LineCout();
 	void manageCriticalPackage(sf::Packet& packet);
 	void ManageWelcome(sf::Packet& packet);
 	void ManageMovement(sf::Packet& packet);
@@ -44,6 +46,8 @@ public:
 	void ManageResetGame(sf::Packet packet);
 
 	void ManageDeleteEnemyPos(sf::Packet& packet);
+
+	void ManageCleanDisconnected();
 
 	void RecievingThread();
 	void SendHello();

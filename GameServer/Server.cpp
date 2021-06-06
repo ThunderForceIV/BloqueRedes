@@ -85,6 +85,8 @@ int Server::ManageChallenge() {
 bool Server::ResolveChallenge(int clientAnswer, int clientQuestion) {
 	return clientAnswer * 2 == clientQuestion;
 }
+
+
 void Server::ManageChallenge_R(sf::Packet& packet, sf::IpAddress& ip, unsigned short& port) {
 	int actualClientSalt;
 	int actualServerSalt;
@@ -99,16 +101,20 @@ void Server::ManageChallenge_R(sf::Packet& packet, sf::IpAddress& ip, unsigned s
 			packet >> actualClientSalt;
 			packet >> actualServerSalt;
 			packet >> clientAnswer;
-			std::cout << "Player Salt del map: " << it->second.playerSalt << std::endl;
-			std::cout << "Player Salt del cliente: " << actualClientSalt << std::endl;
-
-			std::cout << "Server Salt del map: " << it->second.serverSalt << std::endl;
-			std::cout << "server Salt del cliente: " << actualServerSalt << std::endl;
-
-			std::cout << "Numero de desafio: " << it->second.challengeNumber << std::endl;
-			std::cout << "ClientAnswer: " << clientAnswer << std::endl;
+		
 
 			if (it->second.playerSalt == actualClientSalt && it->second.serverSalt == actualServerSalt && ResolveChallenge(clientAnswer, it->second.challengeNumber)) {
+				std::cout << std::endl<<"-------------------------------------------------------------" << std::endl;
+				std::cout << "                          New Player                         " << std::endl;
+				std::cout << "-------------------------------------------------------------" << std::endl;
+
+				std::cout << "Player Salt: " << it->second.playerSalt << std::endl;
+
+				std::cout << "Server Salt: " << it->second.serverSalt << std::endl;
+
+				std::cout << "Challenge: " << it->second.challengeNumber << std::endl;
+				std::cout << "Answer: " << clientAnswer << std::endl;
+				
 				int key = 0;
 				for (std::map<unsigned short, PlayerInfo>::iterator it = this->clients.begin();it != clients.end();it++) {
 					SendMessage2AllClients("Un jugador se ha conectado", it->first);
@@ -123,7 +129,7 @@ void Server::ManageChallenge_R(sf::Packet& packet, sf::IpAddress& ip, unsigned s
 				packet << actualServerSalt;
 				it->second.position.x = rand() % INITIALPOSPLAYER;
 				it->second.position.y = rand() % INITIALPOSPLAYER;
-				
+			
 				packet << it->second.position.x;
 				packet << it->second.position.y;
 				FillEnemyOfNewPlayer(port, it->second.position);
@@ -135,7 +141,7 @@ void Server::ManageChallenge_R(sf::Packet& packet, sf::IpAddress& ip, unsigned s
 
 		}
 	}
-
+	clientsWaiting.clear();
 	//ESTO SIRVE PARA LOS PAQUETES CRITICOS
 
 
@@ -258,7 +264,6 @@ void Server::checkInactivity()
 	while (true)
 	{
 		for (std::map<unsigned short, PlayerInfo>::iterator it = clients.begin();it != clients.end();it++) {
-			std::cout << it->second.lastConnection->GetDuration();
 			if (it->second.lastConnection->GetDuration() > PLAYER_DESCONNECTION)
 			{
 				inactivityCheck.push_back(it->first);
@@ -287,35 +292,55 @@ void Server::checkInactivity()
 
 void Server::ExitThread() {
 	std::string message;
-
-	std::cout << std::endl << "Escribe el mensaje que quieras enviar: ";
+	sf::Packet packet;
+	while(true){
+	std::cout << std::endl << "If you type exit at any time you will close the server, if you close the tab it will be for inactivity: ";
 	std::cin >> message;
 
 	if (message == "exit") {
-		packet.clear();
+		for (std::map<unsigned short, PlayerInfo>::iterator it = clients.begin();it != clients.end();it++) {
 
-		packet << HEADER_PLAYER::EXIT;
-		packet << message;
-		udpSocket->udpStatus = udpSocket->Send(packet, ip, port);
+			packet << HEADER_SERVER::SERVERDISCONNECTED;
+			packet << it->second.playerSalt;
+			packet << it->second.serverSalt;
+			packet << message;
+			udpSocket->udpStatus = udpSocket->Send(packet, sf::IpAddress::LocalHost, it->first);
+			packet.clear();
+			
+		}
 		exit(0);
-
-
+	}
+	
 	}
 }
 
 void Server::SendCriticalPackets() {
 	while (true) {
 		sf::Packet packet;
+		unsigned short idDelete = -1;
+		bool deletePacket = false;
 		for (std::map<int, CriticalPackets>::iterator it = criticalPackets.begin();it != criticalPackets.end();it++) {
-			packet << HEADER_SERVER::CRITICALPACKAGE_S;
-			packet << it->second.local;
-			packet << it->second.message;
-			if (it == criticalPackets.begin()) {
-				std::cout << "Se envia paquete critico a  " << it->second.port << " con la key: " << it->second.local << std::endl;
-			}
-			udpSocket->udpStatus = udpSocket->Send(packet, sf::IpAddress::LocalHost, it->second.port);
+			if (IsClientInMap(it->second.port)) {
+				packet << HEADER_SERVER::CRITICALPACKAGE_S;
+				packet << it->second.local;
+				packet << it->second.message;
+				if (it == criticalPackets.begin()) {
+					std::cout << "Se envia paquete critico a  " << it->second.port << " con la key: " << it->second.local << std::endl;
+				}
+				udpSocket->udpStatus = udpSocket->Send(packet, sf::IpAddress::LocalHost, it->second.port);
 
-			it->second.timer->ResetTimer();
+				it->second.timer->ResetTimer();
+			}
+			else {
+				idDelete = it->second.port;
+				deletePacket = true;
+			}
+			
+		}
+		if (deletePacket == true) {
+			criticalPackets.erase(idDelete);
+			deletePacket = false;
+
 		}
 		std::this_thread::sleep_for(std::chrono::seconds(4));
 
