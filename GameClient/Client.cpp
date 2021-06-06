@@ -49,10 +49,12 @@ void Client::ManageChallenge_Q(sf::Packet &packet, sf::IpAddress &ip, unsigned s
 int Client::ResolveChallenge(int challengeNumber) {
 	return challengeNumber / 2;
 }
+
 void Client::LineCout() {
 	std::cout << std::endl<<"-------------------------------------------------------------" << std::endl;
 
 }
+
 //Cuando recibe un paquete critico lo responde con un A<K
 void Client::manageCriticalPackage(sf::Packet &packet) {
 	int key;
@@ -77,6 +79,7 @@ void Client::manageCriticalPackage(sf::Packet &packet) {
 	LineCout();
 
 }
+
 //Conseguimos un random float para la perdida de paquetes
 static float GetRandomFloat() {
 	static std::random_device rd;
@@ -84,6 +87,7 @@ static float GetRandomFloat() {
 	static std::uniform_real_distribution<float> dis(0.f, 1.f);
 	return dis(gen);
 }
+
 //El cliente recibe Welcome
 void Client::ManageWelcome(sf::Packet& packet) {
 		packet >> clientSalt;
@@ -99,6 +103,8 @@ void Client::ManageWelcome(sf::Packet& packet) {
 //Controlamos el movimiento
 void Client::ManageMovement(sf::Packet& packet) {
 	int x = 0,  y = 0, auxiliar = 0;
+	packet >> auxiliarClientSalt;
+	packet >> auxiliarServerSalt;
 	packet >> auxiliar;
 	packet >> x;
 	packet >> y;
@@ -337,7 +343,8 @@ void Client::SendingThread() {//Envia los paquetes
 			}
 			else {
 				packet << HEADER_PLAYER::GENERICMSG_P;
-
+				packet << clientSalt;
+				packet << serverSalt;
 				packet << message;
 				udpSocket->udpStatus = udpSocket->Send(packet, ip, port);
 			}

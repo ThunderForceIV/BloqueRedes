@@ -11,7 +11,7 @@ Server::Server()
 Server::~Server()
 {
 }
-
+//Llenamos el critical map, habrá un thread que mirará si hay algo dentro del mapa
 void Server::fillCriticalMap(int key, std::string message, unsigned short port) {
 	CriticalPackets critical;
 	critical.ip = sf::IpAddress::LocalHost;
@@ -21,6 +21,8 @@ void Server::fillCriticalMap(int key, std::string message, unsigned short port) 
 	criticalPackets.insert(std::pair<int, CriticalPackets>(key, critical));
 
 }
+
+//Comprueba si el cliente esta en el mapa
 bool Server::IsClientInMap(unsigned short port)
 {
 	for (std::map<unsigned short, PlayerInfo>::iterator it = clients.begin();it != clients.end();it++) {
@@ -108,7 +110,8 @@ void Server::ManageChallenge_R(sf::Packet& packet, sf::IpAddress& ip, unsigned s
 
 				std::cout << "Challenge: " << it->second.challengeNumber << std::endl;
 				std::cout << "Answer: " << clientAnswer << std::endl;
-				
+				std::cout << "-------------------------------------------------------------" << std::endl;
+
 				int key = 0;
 				for (std::map<unsigned short, PlayerInfo>::iterator it = this->clients.begin();it != clients.end();it++) {
 					SendMessage2AllClients("Un jugador se ha conectado", it->first);
@@ -266,18 +269,24 @@ void Server::checkInactivity()
 				inactivityCheck.push_back(it->first);
 			}
 		}
-		for (std::list<unsigned short>::iterator it = inactivityCheck.begin(); it != inactivityCheck.end(); ++it) {
-			packet << HEADER_SERVER::DISCONNECT;
-			auto it2 = clients.find(*it);
-			it2->second.playerSalt;
-			it2->second.serverSalt;
+		servermtx.lock();
 
-			udpSocket->udpStatus = udpSocket->Send(packet, sf::IpAddress::LocalHost, *it);
+		for (std::list<unsigned short>::iterator it = inactivityCheck.begin(); it != inactivityCheck.end(); ++it) {
+			int key=0;
 			clients.erase(*it);
-			packet.clear();
+			//criticalPackets.erase(port);
+			DeleteEnemiesInPlayersVectors(*it);
+			for (std::map<unsigned short, PlayerInfo>::iterator it2 = this->clients.begin();it2 != clients.end();it2++) {
+				SendMessage2AllClients("Un jugador se ha desconectado", it2->first);
+				
+
+			}
+			key = 0;
+	
 
 		}
 		inactivityCheck.clear();
+		servermtx.unlock();
 
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 	}
@@ -448,17 +457,22 @@ void Server::ServerLoop()
 				break;
 
 			case HEADER_PLAYER::GENERICMSG_P:
-					
-				packet >> auxiliarMessage;
-				if (clients.size() != 0) {
-					auto it = clients.find(port);
-					it->second.lastConnection->ResetTimer();
-				}
-				for (std::map<unsigned short, PlayerInfo>::iterator it = this->clients.begin();it != clients.end();it++) {
-					if (it->first != port) {
-						SendMessage2AllClients(auxiliarMessage, it->first);
+				if (IsClientInMap(port)) {
+					packet >> auxiliarPlayerSalt;
+					packet >> auxiliarServerSalt;
+					packet >> auxiliarMessage;
+					if (CheckClientAndServerSalt(port, auxiliarPlayerSalt, auxiliarServerSalt)) {
+						if (clients.size() != 0) {
+							auto it = clients.find(port);
+							it->second.lastConnection->ResetTimer();
+						}
+						for (std::map<unsigned short, PlayerInfo>::iterator it = this->clients.begin();it != clients.end();it++) {
+							if (it->first != port) {
+								SendMessage2AllClients(auxiliarMessage, it->first);
+							}
+
+						}
 					}
-					
 				}
 				break;
 			case HEADER_PLAYER::EXIT:
@@ -562,9 +576,12 @@ void Server::SendClientsPositions() {
 			}
 		}
 		else {
+			servermtx.lock();
 			for (std::map<unsigned short, PlayerInfo>::iterator it = clients.begin();it != clients.end();it++) {
 				if (it->second.accumulationMovement.size() != 0) {
 					packet << HEADER_SERVER::MOVE_S;
+					packet << it->second.playerSalt;
+					packet << it->second.serverSalt;
 					packet << it->second.accumulationMovement[it->second.accumulationMovement.size() - 1].id;
 
 					it->second.position.x = it->second.accumulationMovement[it->second.accumulationMovement.size() - 1].position.x;
@@ -603,6 +620,7 @@ void Server::SendClientsPositions() {
 					packet.clear();
 				}
 			}
+			servermtx.unlock();
 		}
 	}
 }
