@@ -45,6 +45,7 @@ public:
 
 	void ServerLoop();
 	void ModifyEnemyPositions(unsigned short port, sf::Vector2i positions);
+	bool CheckIfEnemyIsInPlayerPos(unsigned short port);
 	void SendClientsPositions();
 };
 

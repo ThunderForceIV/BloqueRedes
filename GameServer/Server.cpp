@@ -439,19 +439,58 @@ void Server::ModifyEnemyPositions(unsigned short port, sf::Vector2i positions) {
 		}
 	}
 }
+bool Server::CheckIfEnemyIsInPlayerPos(unsigned short port) {
+	auto it2 = clients.find(port);
+	if (it2->second.enemyPositions.size() != 0) {
+		for (int i = 0;i < it2->second.enemyPositions.size();i++) {
+			if ((it2->second.position.x == it2->second.enemyPositions[i].position.x) && (it2->second.position.y == it2->second.enemyPositions[i].position.y)) {
+				return true;
+			}
+		}
+	}
+	return false;
+
+}
 void Server::SendClientsPositions() {
 	while (true) {
 		sf::Packet packet;
-
+		int auxiliarCheck = 0;;
 		for (std::map<unsigned short, PlayerInfo>::iterator it = clients.begin();it != clients.end();it++) {
 			if (it->second.accumulationMovement.size() != 0) {
 				packet << HEADER_SERVER::MOVE_S;
 				packet << it->second.accumulationMovement[it->second.accumulationMovement.size() - 1].id;
-				packet << it->second.accumulationMovement[it->second.accumulationMovement.size() - 1].position.x;
-				packet << it->second.accumulationMovement[it->second.accumulationMovement.size() - 1].position.y;
+				
 				it->second.position.x = it->second.accumulationMovement[it->second.accumulationMovement.size() - 1].position.x;
 				it->second.position.y = it->second.accumulationMovement[it->second.accumulationMovement.size() - 1].position.y;
+				while (CheckIfEnemyIsInPlayerPos(it->first)) {
+					auxiliarCheck = rand() % 4;
+					switch (auxiliarCheck)
+					{
+					case 0:
+						it->second.position.x++;
+						break;
+					case 1:
+						it->second.position.x--;
+
+						break;
+					case 2:
+						it->second.position.y++;
+
+						break;
+					case 3:
+						it->second.position.y--;
+
+						break;
+
+					default:
+						break;
+					}
+				}
+				packet << it->second.position.x;
+				packet << it->second.position.y;
+				auxiliarCheck = 2;
 				it->second.accumulationMovement.clear();
+				
 				ModifyEnemyPositions(it->first, it->second.position);
 				udpSocket->udpStatus = udpSocket->Send(packet, sf::IpAddress::LocalHost, it->first);
 				packet.clear();
