@@ -12,9 +12,10 @@ Server::~Server()
 {
 }
 //Llenamos el critical map, habrá un thread que mirará si hay algo dentro del mapa
-void Server::fillCriticalMap(int key, std::string message, unsigned short port) {
+void Server::fillCriticalMap(int key, std::string message, unsigned short port,HEADER_SERVER header) {
 	CriticalPackets critical;
 	critical.ip = sf::IpAddress::LocalHost;
+	critical.header = header;
 	critical.port = port;
 	critical.local = key;
 	critical.message = message;
@@ -115,8 +116,8 @@ void Server::ManageChallenge_R(sf::Packet& packet, sf::IpAddress& ip, unsigned s
 
 				int key = 0;
 				for (std::map<unsigned short, PlayerInfo>::iterator it = this->clients.begin();it != clients.end();it++) {
-					SendMessage2AllClients("Un jugador se ha conectado", it->first);
-					fillCriticalMap(key, "Critical", it->first);
+					//SendMessage2AllClients("Un jugador se ha conectado", it->first);
+					fillCriticalMap(key, "Critical", it->first,HEADER_SERVER::NEWPLAYER);
 					key++;
 
 				}
@@ -356,7 +357,7 @@ void Server::SendCriticalPackets() {
 		for (std::map<int, CriticalPackets>::iterator it = criticalPackets.begin();it != criticalPackets.end();it++) {
 			if (IsClientInMap(it->second.port)) {
 				auto it2 = clients.find(it->second.port);
-				packet << HEADER_SERVER::CRITICALPACKAGE_S;
+				packet << it->second.header;
 				packet << it2->second.playerSalt;
 				packet << it2->second.serverSalt;
 				packet << it->second.local;
@@ -513,7 +514,7 @@ void Server::ServerLoop()
 					DeleteEnemiesInPlayersVectors(port);
 					for (std::map<unsigned short, PlayerInfo>::iterator it = this->clients.begin();it != clients.end();it++) {
 						SendMessage2AllClients("Un jugador se ha desconectado", it->first);
-						fillCriticalMap(key, "Critical", it->first);
+						fillCriticalMap(key, "Critical", it->first,HEADER_SERVER::ONEPLAYERDISCONNECTED);
 						key++;
 
 					}

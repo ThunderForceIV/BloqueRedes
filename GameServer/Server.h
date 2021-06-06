@@ -20,7 +20,7 @@ public:
 	float AverageRtt();
 	Server();
 	~Server();
-	void fillCriticalMap(int key, std::string message, unsigned short port);
+	void fillCriticalMap(int key, std::string message, unsigned short port, HEADER_SERVER header);
 	bool IsClientInMap(unsigned short checkPort);
 	void SendMessage2AllClients(std::string message, unsigned short port);
 	bool CheckClientAndServerSalt(unsigned short puerto, int clientSalt, int serverSalt);

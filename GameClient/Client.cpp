@@ -69,6 +69,7 @@ void Client::manageCriticalPackage(sf::Packet &packet) {
 	packet << serverSalt;
 	packet << key;
 	packet << "respuesta";
+
 	udpSocket->udpStatus = udpSocket->Send(packet, sf::IpAddress::LocalHost, SERVER_PORT);
 	packet.clear();
 	LineCout();
@@ -293,7 +294,20 @@ void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 			case HEADER_SERVER::SERVERDISCONNECTED:
 				ManageCleanDisconnected();
 				break;
+			case HEADER_SERVER::ONEPLAYERDISCONNECTED:
+				LineCout();
+				std::cout << "PAQUETE CRITICO, UN JUGADOR SE HA DESCONECTADO";
+				LineCout();
+				manageCriticalPackage(packet);
+				break;
+			case HEADER_SERVER::NEWPLAYER:
+				LineCout();
+				std::cout << "PAQUETE CRITICO, UN JUGADOR SE HA CONECTADO";
+				LineCout();
+				manageCriticalPackage(packet);
+				break;
 			}
+				
 		}
 
 

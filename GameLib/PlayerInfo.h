@@ -29,7 +29,7 @@ struct CriticalPackets
 	unsigned short port;
 	sf::IpAddress ip;
 	Timer* timer = new Timer();
-	HEADER_PLAYER header = HEADER_PLAYER::CRITICALPACKAGE_P;
+	HEADER_SERVER header = HEADER_SERVER::DELETEENEMYPOS;
 	int local;
 	std::string message;
 
