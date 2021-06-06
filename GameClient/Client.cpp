@@ -119,6 +119,8 @@ void Client::ManageEnemyPos(sf::Packet& packet) {
 }
 void Client::ManageDisconnect() {
 	udpSocket->unBind();
+	exit(0);
+
 	delete[] udpSocket;
 	gamerunning = false;
 	system("cls");
@@ -154,61 +156,62 @@ void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 
 
 		packet >> recieverInt;
-		if (timerActivated == true) {
-			serverDisconnected->ResetTimer();
-		}
-		switch (recieverInt) {
-			
-		case HEADER_SERVER::CHALLENGE_Q:
+		if (udpSocket->udpStatus == sf::Socket::Done) {
+			if (timerActivated == true) {
+				serverDisconnected->ResetTimer();
+			}
+			switch (recieverInt) {
+
+			case HEADER_SERVER::CHALLENGE_Q:
 
 
-			ManageChallenge_Q(packet, ip, port);
-			packet << ResolveChallenge(challengeNumber);
+				ManageChallenge_Q(packet, ip, port);
+				packet << ResolveChallenge(challengeNumber);
 
-			port = SERVER_PORT;
-			udpSocket->udpStatus = udpSocket->Send(packet, ip, port);
+				port = SERVER_PORT;
+				udpSocket->udpStatus = udpSocket->Send(packet, ip, port);
 
-			break;
-		case HEADER_SERVER::WELCOME:
-			ManageWelcome(packet);
-			userRegisted = true;
-			protocolConnected = true;
-			serverDisconnected = new Timer;
-			timerActivated = true;
-			break;
-		case HEADER_SERVER::GENERICMSG_S:
-			if (rndPacketLoss > PERCENT_PACKETLOSS) {
-				packet >> message;
-				if (udpSocket->udpStatus == sf::Socket::Done) {
-					std::cout << std::endl << "Has recibido " << message << "." << std::endl;
-					packet.clear();
+				break;
+			case HEADER_SERVER::WELCOME:
+				ManageWelcome(packet);
+				userRegisted = true;
+				protocolConnected = true;
+				serverDisconnected = new Timer;
+				timerActivated = true;
+				break;
+			case HEADER_SERVER::GENERICMSG_S:
+				if (rndPacketLoss > PERCENT_PACKETLOSS) {
+					packet >> message;
+					if (udpSocket->udpStatus == sf::Socket::Done) {
+						std::cout << std::endl << "Has recibido " << message << "." << std::endl;
+						packet.clear();
+					}
 				}
-			}
-			else {
-				std::cout << "Se ha perdido el paquete";
+				else {
+					std::cout << "Se ha perdido el paquete";
+				}
+
+				break;
+			case HEADER_SERVER::CRITICALPACKAGE_S:
+				manageCriticalPackage(packet);
+				std::cout << "Se ha enviado AKM" << std::endl;
+				break;
+			case HEADER_SERVER::MOVE_S:
+				ManageMovement(packet);
+				break;
+			case HEADER_SERVER::ENEMYPOS_S:
+				ManageEnemyPos(packet);
+				break;
+			case HEADER_SERVER::DISCONNECT:
+				ManageDisconnect();
+				break;
+			case HEADER_SERVER::RESET_GAME:
+				ManageResetGame(packet);
+				break;
 			}
 
-			break;
-		case HEADER_SERVER::CRITICALPACKAGE_S:
-			manageCriticalPackage(packet);
-			std::cout << "Se ha enviado AKM" << std::endl;
-			break;
-		case HEADER_SERVER::MOVE_S:
-			ManageMovement(packet);
-			break;
-		case HEADER_SERVER::ENEMYPOS_S:
-			ManageEnemyPos(packet);
-			break;
-		case HEADER_SERVER::DISCONNECT:
-			ManageDisconnect();
-			break;
-		case HEADER_SERVER::RESET_GAME:
-			ManageResetGame(packet);
-			break;
+
 		}
-		
-		
-	
 
 	}
 }
