@@ -7,7 +7,7 @@ const int SERVER_DESCONNECTIONCLEAN = 5;
 
 const int GAME_TIMER = 30;
 
-const float PERCENT_PACKETLOSS = 0.3f;
+const float PERCENT_PACKETLOSS = 0.1f;
 
 //SIZE OF WINDOW IN CELLS
 const int CELL_WIDTH_WINDOW = 80;

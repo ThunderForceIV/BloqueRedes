@@ -1,12 +1,6 @@
 #include "Server.h"
 
-float Server::AverageRtt()
-{
-	double average = std::accumulate(averageRtt.begin(), averageRtt.end(), 0.0) / averageRtt.size();
-	if (averageRtt.size() == 0) average = 0;
 
-	return average;
-}
 
 Server::Server()
 {
@@ -220,7 +214,10 @@ void Server::ManageMove(sf::Packet& packet, unsigned short& port) {
 
 }
 float Server::GetRTT(int key) {
-	return criticalPackets[key].timer->GetMilisDuration();
+	float timer = criticalPackets[key].timer->GetMilisDuration();
+
+	averageRtt.push_back(timer);
+	return timer;
 }
 
 void Server::RecieveClients() {
@@ -314,6 +311,16 @@ void Server::ExitThread() {
 	}
 }
 
+double Server::GetAverageRTT()
+{
+	double sumRtt = std::accumulate(averageRtt.begin(), averageRtt.end(), 0.0) / averageRtt.size();
+	if (averageRtt.size() == 0) {
+		sumRtt = 0;
+	}
+
+	return sumRtt;
+}
+
 void Server::SendCriticalPackets() {
 	while (true) {
 		sf::Packet packet;
@@ -342,11 +349,24 @@ void Server::SendCriticalPackets() {
 			deletePacket = false;
 
 		}
-		std::this_thread::sleep_for(std::chrono::seconds(4));
+		float auxiliarCongestion = GetAverageRTT();
+		if (auxiliarCongestion <= 1) {
+			std::this_thread::sleep_for(std::chrono::seconds(3));
+
+		}
+		else {
+			std::this_thread::sleep_for(std::chrono::seconds(6));
+
+		}
+	}
+}
+void Server::RttThread() {
+	while (true) {
+		std::cout << "The average RTT is " << GetAverageRTT() << std::endl;
+		std::this_thread::sleep_for(std::chrono::seconds(10));
 
 	}
 }
-
 void Server::manageCriticalPackets(int key, unsigned short port) {
 	servermtx.lock();
 	std::cout << "El paquete critico ha tardado "<<GetRTT(key)<<std::endl;
@@ -396,9 +416,10 @@ void Server::ServerLoop()
 	criticalPackages.detach();
 
 
-
 	std::thread tSendEnemyPos(&Server::SendEnemyPos, this);
 	tSendEnemyPos.detach();
+
+
 	
 	while (true)
 	{
@@ -470,11 +491,14 @@ void Server::ServerLoop()
 
 			case HEADER_PLAYER::MOVE_P:
 				if (!playerCanMove) {
+
 					gameTime = new Timer;
 					
 					playerCanMove = true;
 					std::thread tPlayerMovement(&Server::SendClientsPositions, this);
 					tPlayerMovement.detach();
+					std::thread tRttAverage(&Server::RttThread, this);
+					tRttAverage.detach();
 				}
 				if (clients.size() != 0) {
 					auto it = clients.find(port);

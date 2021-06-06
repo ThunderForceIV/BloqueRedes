@@ -37,10 +37,12 @@ public:
 	void checkInactivity();
 	void ExitThread();
 	
-
+	double GetAverageRTT();
 	
 
 	void SendCriticalPackets();
+
+	void RttThread();
 
 
 	void manageCriticalPackets(int key, unsigned short port);
