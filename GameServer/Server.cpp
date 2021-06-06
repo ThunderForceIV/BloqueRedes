@@ -78,11 +78,12 @@ int Server::ManageChallenge() {
 	}
 	return challengeNumber;
 }
+//Tratamos el challenge que le ha salido al jugador para saber si es la solución correcta
 bool Server::ResolveChallenge(int clientAnswer, int clientQuestion) {
 	return clientAnswer * 2 == clientQuestion;
 }
 
-
+//Controlamos el challengeR
 void Server::ManageChallenge_R(sf::Packet& packet, sf::IpAddress& ip, unsigned short& port) {
 	int actualClientSalt;
 	int actualServerSalt;
@@ -144,6 +145,7 @@ void Server::ManageChallenge_R(sf::Packet& packet, sf::IpAddress& ip, unsigned s
 
 }
 
+//Llenamos todos los enemigos de un enemigo nuevo
 void Server::FillEnemyOfNewPlayer(unsigned short port, sf::Vector2i position) {
 	enemy auxiliarEnemy;
 	auxiliarEnemy.port = port;
@@ -155,6 +157,7 @@ void Server::FillEnemyOfNewPlayer(unsigned short port, sf::Vector2i position) {
 
 }
 
+//Llenamos todos los clientes con el nuevo
 void Server::FillEnemyToNewPlayer(unsigned short port) {
 	auto it = clients.find(port);
 	enemy auxiliarEnemy;
@@ -191,31 +194,41 @@ void Server::SendEnemyPos() {
 
 	}
 }
+
+//Controlamos como se mueve el jugador
 void Server::ManageMove(sf::Packet& packet, unsigned short& port) {
 	int x = 0, y = 0, auxiliar = 0;
-	packet >> auxiliar;
-	packet >> x;
-	packet >> y;
-	if (clients.size() != 0) {
-		auto it = clients.find(port);
+	int clientSaltAux;
+	int serverSaltAux;
+	packet >> clientSaltAux;
+	packet >> serverSaltAux;
+	if (CheckClientAndServerSalt(port, clientSaltAux, serverSaltAux)) {
+		packet >> auxiliar;
+		packet >> x;
+		packet >> y;
+		if (clients.size() != 0) {
+			auto it = clients.find(port);
 
-		if (auxiliar < it->second.accumulationMovement.size()) {
-		}
-		else {
+			if (auxiliar < it->second.accumulationMovement.size()) {
+			}
+			else {
 
-			Accumulation acumulationAuxiliar;
-			acumulationAuxiliar.id = auxiliar;
-			acumulationAuxiliar.position.x = x;
-			acumulationAuxiliar.position.y = y;
-			servermtx.lock();
-			it->second.accumulationMovement.push_back(acumulationAuxiliar);
-			servermtx.unlock();
-			packet.clear();
+				Accumulation acumulationAuxiliar;
+				acumulationAuxiliar.id = auxiliar;
+				acumulationAuxiliar.position.x = x;
+				acumulationAuxiliar.position.y = y;
+				servermtx.lock();
+				it->second.accumulationMovement.push_back(acumulationAuxiliar);
+				servermtx.unlock();
+				packet.clear();
 
+			}
 		}
 	}
 
 }
+
+//Tiempo
 float Server::GetRTT(int key) {
 	float timer = criticalPackets[key].timer->GetMilisDuration();
 
@@ -223,6 +236,7 @@ float Server::GetRTT(int key) {
 	return timer;
 }
 
+//Función que no se utiliza
 void Server::RecieveClients() {
 	int recieverInt;
 	sf::Packet packet;
@@ -256,6 +270,7 @@ void Server::RecieveClients() {
 
 }
 
+//Controlamos si algún jugador se ha quedado inactivo
 void Server::checkInactivity() 
 {
 	std::list<unsigned short> inactivityCheck;
@@ -296,6 +311,7 @@ void Server::checkInactivity()
 
 }
 
+//Controlamos si el exit se cierra
 void Server::ExitThread() {
 	std::string message;
 	sf::Packet packet;
@@ -320,6 +336,7 @@ void Server::ExitThread() {
 	}
 }
 
+//Controlamos la media del RTT
 double Server::GetAverageRTT()
 {
 	double sumRtt = std::accumulate(averageRtt.begin(), averageRtt.end(), 0.0) / averageRtt.size();
@@ -330,6 +347,7 @@ double Server::GetAverageRTT()
 	return sumRtt;
 }
 
+//Enviamos critical packets
 void Server::SendCriticalPackets() {
 	while (true) {
 		sf::Packet packet;
@@ -337,7 +355,10 @@ void Server::SendCriticalPackets() {
 		bool deletePacket = false;
 		for (std::map<int, CriticalPackets>::iterator it = criticalPackets.begin();it != criticalPackets.end();it++) {
 			if (IsClientInMap(it->second.port)) {
+				auto it2 = clients.find(it->second.port);
 				packet << HEADER_SERVER::CRITICALPACKAGE_S;
+				packet << it2->second.playerSalt;
+				packet << it2->second.serverSalt;
 				packet << it->second.local;
 				packet << it->second.message;
 				if (it == criticalPackets.begin()) {
@@ -369,6 +390,8 @@ void Server::SendCriticalPackets() {
 		}
 	}
 }
+
+//Calcula la media cada 10sec
 void Server::RttThread() {
 	while (true) {
 		std::cout << "The average RTT is " << GetAverageRTT() << std::endl;
@@ -376,6 +399,8 @@ void Server::RttThread() {
 
 	}
 }
+
+//Función que calcula la vuelta del paquete critico
 void Server::manageCriticalPackets(int key, unsigned short port) {
 	servermtx.lock();
 	std::cout << "El paquete critico ha tardado "<<GetRTT(key)<<std::endl;
@@ -383,6 +408,7 @@ void Server::manageCriticalPackets(int key, unsigned short port) {
 	servermtx.unlock();
 	}
 
+//Borramos los enemigos del players vectors
 void Server::DeleteEnemiesInPlayersVectors(unsigned short port) {
 	int auxiliar;
 	sf::Packet packet;
@@ -403,6 +429,8 @@ void Server::DeleteEnemiesInPlayersVectors(unsigned short port) {
 		}
 	}
 }
+
+//Server Loop
 void Server::ServerLoop()
 {
 
@@ -468,7 +496,7 @@ void Server::ServerLoop()
 						}
 						for (std::map<unsigned short, PlayerInfo>::iterator it = this->clients.begin();it != clients.end();it++) {
 							if (it->first != port) {
-								SendMessage2AllClients(auxiliarMessage, it->first);
+								SendMessage2AllClients(auxiliarMessage, it->first );
 							}
 
 						}
@@ -518,6 +546,7 @@ void Server::ServerLoop()
 					auto it = clients.find(port);
 					it->second.lastConnection->ResetTimer();
 				}
+				
 				ManageMove(packet,port);
 				break;
 			default:
@@ -531,6 +560,8 @@ void Server::ServerLoop()
 
 	}
 }
+
+//Modificamos los enemy positions de todos los clientes
 void Server::ModifyEnemyPositions(unsigned short port, sf::Vector2i positions) {
 	for (std::map<unsigned short, PlayerInfo>::iterator it = clients.begin();it != clients.end();it++) {
 		if (port != it->first) {
@@ -544,6 +575,8 @@ void Server::ModifyEnemyPositions(unsigned short port, sf::Vector2i positions) {
 		}
 	}
 }
+
+//Comprobamos si los enemigos estan en la posición del cliente
 bool Server::CheckIfEnemyIsInPlayerPos(unsigned short port) {
 	auto it2 = clients.find(port);
 	if (it2->second.enemyPositions.size() != 0) {
@@ -556,6 +589,8 @@ bool Server::CheckIfEnemyIsInPlayerPos(unsigned short port) {
 	return false;
 
 }
+
+//Enviamos las posiciones en un thread
 void Server::SendClientsPositions() {
 	while (true) {
 		sf::Packet packet;

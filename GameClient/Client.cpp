@@ -59,6 +59,8 @@ void Client::LineCout() {
 void Client::manageCriticalPackage(sf::Packet &packet) {
 	int key;
 	std::string message;
+	packet >> auxiliarClientSalt;
+	packet >> auxiliarServerSalt;
 	packet >> key;
 	packet >> message;
 	packet.clear();
@@ -152,6 +154,8 @@ void Client::ManageEnemyPos(sf::Packet& packet) {
 		clientMtx.unlock();
 	}
 }
+
+//Controlamos el desconectar del server
 void Client::ManageDisconnect() {
 	udpSocket->unBind();
 
@@ -200,6 +204,8 @@ void Client::ManageDeleteEnemyPos(sf::Packet &packet) {
 
 	}
 }
+
+//controlamos el clean disconnect
 void Client::ManageCleanDisconnected() {
 	LineCout();
 	std::cout <<"          THE SERVER HAS BEEN DISCONNECTED            ";
@@ -236,7 +242,7 @@ void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 
 				case HEADER_SERVER::CHALLENGE_Q:
 
-
+					std::cout << "The player recived CHALLENGE_Q"<<std::endl;
 					ManageChallenge_Q(packet, ip, port);
 					packet << ResolveChallenge(challengeNumber);
 
@@ -245,6 +251,9 @@ void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 
 					break;
 				case HEADER_SERVER::WELCOME:
+					LineCout();
+					std::cout << "           THE PLAYER IS IN THE SERVER";
+					LineCout();
 					ManageWelcome(packet);
 					userRegisted = true;
 					protocolConnected = true;
@@ -258,9 +267,7 @@ void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 						packet.clear();
 					
 				}
-				else {
-					std::cout << "Se ha perdido el paquete";
-				}
+				
 
 				break;
 			case HEADER_SERVER::CRITICALPACKAGE_S:
@@ -290,6 +297,9 @@ void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 		}
 
 
+		}
+		else {
+			std::cout << "Se ha perdido el paquete";
 		}
 
 	}
@@ -495,6 +505,8 @@ void Client::SendAcumulationPackets() {
 		accumulationMovement.id = accumulationVector.size();
 		accumulationVector.push_back(accumulationMovement);
 		packet << HEADER_PLAYER::MOVE_P;
+		packet << clientSalt;
+		packet << serverSalt;
 		packet << accumulationMovement.id;
 		packet << acumulationPosition.x;
 		packet << acumulationPosition.y;
