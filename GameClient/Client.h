@@ -43,6 +43,8 @@ public:
 	void ManageDisconnect();
 	void ManageResetGame(sf::Packet packet);
 
+	void ManageDeleteEnemyPos(sf::Packet& packet);
+
 	void RecievingThread();
 	void SendHello();
 	void SendingThread();

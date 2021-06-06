@@ -143,7 +143,24 @@ void Client::ManageResetGame(sf::Packet packet) {
 	std::cout << "------------------------------------------------------------" << std::endl;
 
 }
+void Client::ManageDeleteEnemyPos(sf::Packet &packet) {
+	packet >> auxiliarClientSalt;
+	packet >> auxiliarServerSalt;
+	unsigned short port;
 
+	packet >> port;
+	int auxiliar;
+	if (enemyPos.size() != 0) {
+		for (int i = 0;i < enemyPos.size();i++) {
+			if (port == enemyPos[i].port) {
+				auxiliar = i;
+			}
+		}
+		enemyPos.erase(enemyPos.begin() + auxiliar);
+		
+
+	}
+}
 void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 	sf::Packet packet;
 	sf::IpAddress ip;
@@ -210,7 +227,11 @@ void Client::RecievingThread() {//Escucha los paquetes que envia el servidor
 			case HEADER_SERVER::RESET_GAME:
 				ManageResetGame(packet);
 				break;
+			case HEADER_SERVER::DELETEENEMYPOS:
+				ManageDeleteEnemyPos(packet);
+				break;
 			}
+			
 
 
 		}
@@ -358,12 +379,12 @@ void Client::DrawDungeon()
 		shape.setFillColor(sf::Color(0, 0, 255, 255));
 		shape.setPosition(sf::Vector2f(position.x * DUNGEON_SIZE, position.y * DUNGEON_SIZE));
 		_window.draw(shape);
-
-		for (int i = 0;i < enemyPos.size();i++) {
-			shape.setFillColor(sf::Color::Red);
-			shape.setPosition(sf::Vector2f(enemyPos[i].position.x * DUNGEON_SIZE, enemyPos[i].position.y * DUNGEON_SIZE));
-			_window.draw(shape);
-
+		if(enemyPos.size()!=0){
+			for (int i = 0;i < enemyPos.size();i++) {
+				shape.setFillColor(sf::Color::Red);
+				shape.setPosition(sf::Vector2f(enemyPos[i].position.x * DUNGEON_SIZE, enemyPos[i].position.y * DUNGEON_SIZE));
+				_window.draw(shape);
+			}
 
 		}
 

@@ -3,7 +3,7 @@ const int MAX_64BITS = 2147483647;
 const int SERVER_PORT = 50000;
 const int PLAYER_DESCONNECTION = 30;
 const int SERVER_DESCONNECTION = 5;
-const int GAME_TIMER = 5;
+const int GAME_TIMER = 30;
 
 const float PERCENT_PACKETLOSS = 0.1f;
 
@@ -38,6 +38,7 @@ enum HEADER_SERVER
 	ENEMYPOS_S,
 	DISCONNECT,
 	RESET_GAME,
+	DELETEENEMYPOS,
 };
 
 

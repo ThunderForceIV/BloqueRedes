@@ -329,16 +329,34 @@ void Server::manageCriticalPackets(int key, unsigned short port) {
 	servermtx.unlock();
 	}
 
+void Server::DeleteEnemiesInPlayersVectors(unsigned short port) {
+	int auxiliar;
+	sf::Packet packet;
+	for (std::map<unsigned short, PlayerInfo>::iterator it = clients.begin();it != clients.end();it++) {
+		if (it->second.enemyPositions.size() != 0) {
+			for (int i = 0;i < it->second.enemyPositions.size();i++) {
+				if (port == it->second.enemyPositions[i].port) {
+					auxiliar = i;
+				}
+			}
+			it->second.enemyPositions.erase(it->second.enemyPositions.begin() + auxiliar);
+			packet << HEADER_SERVER::DELETEENEMYPOS;
+			packet << it->second.playerSalt;
+			packet << it->second.serverSalt;
+			packet << port;
+			udpSocket->udpStatus = udpSocket->Send(packet, sf::IpAddress::LocalHost, it->first);
 
-
+		}
+	}
+}
 void Server::ServerLoop()
 {
 
 	this->udpSocket->Bind(50000);
 
 	int recieverInt;
-	int auxiliarPlayerSalt;
-	int auxiliarServerSalt;
+	int auxiliarPlayerSalt=-2;
+	int auxiliarServerSalt=-1;
 	int key = 0;
 	int keyPackage = 0;
 
@@ -398,11 +416,13 @@ void Server::ServerLoop()
 				}
 				break;
 			case HEADER_PLAYER::EXIT:
+				packet >> auxiliarPlayerSalt;
+				packet >> auxiliarServerSalt;
 				if (CheckClientAndServerSalt(port, auxiliarPlayerSalt, auxiliarServerSalt)) {
 
 					clients.erase(port);
 					//criticalPackets.erase(port);
-
+					DeleteEnemiesInPlayersVectors(port);
 					for (std::map<unsigned short, PlayerInfo>::iterator it = this->clients.begin();it != clients.end();it++) {
 						SendMessage2AllClients("Un jugador se ha desconectado", it->first);
 						fillCriticalMap(key, "Critical", it->first);

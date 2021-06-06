@@ -45,6 +45,8 @@ public:
 
 	void manageCriticalPackets(int key, unsigned short port);
 
+	void DeleteEnemiesInPlayersVectors(unsigned short port);
+
 	void ServerLoop();
 	void ModifyEnemyPositions(unsigned short port, sf::Vector2i positions);
 	bool CheckIfEnemyIsInPlayerPos(unsigned short port);
