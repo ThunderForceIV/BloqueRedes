@@ -48,6 +48,13 @@ void Server::SendMessage2AllClients(std::string message, unsigned short port)
 
 	packet.clear();
 }
+bool Server::CheckClientAndServerSalt(unsigned short puerto, int clientSalt, int serverSalt) {
+	auto it = clients.find(puerto);
+	if (clientSalt == it->second.playerSalt && serverSalt == it->second.serverSalt) {
+		return true;
+	}
+	return false;
+}
 void Server::ManageHello(sf::Packet &packet, sf::IpAddress &ip, unsigned short &port) {
 	PlayerInfo playerInfo;
 
@@ -102,7 +109,14 @@ void Server::ManageChallenge_R(sf::Packet& packet, sf::IpAddress& ip, unsigned s
 			std::cout << "ClientAnswer: " << clientAnswer << std::endl;
 
 			if (it->second.playerSalt == actualClientSalt && it->second.serverSalt == actualServerSalt && ResolveChallenge(clientAnswer, it->second.challengeNumber)) {
+				int key = 0;
+				for (std::map<unsigned short, PlayerInfo>::iterator it = this->clients.begin();it != clients.end();it++) {
+					SendMessage2AllClients("Un jugador se ha conectado", it->first);
+					fillCriticalMap(key, "Critical", it->first);
+					key++;
 
+				}
+				key = 0;
 				packet.clear();
 				packet << HEADER_SERVER::WELCOME;
 				packet << actualClientSalt;
@@ -384,24 +398,29 @@ void Server::ServerLoop()
 				}
 				break;
 			case HEADER_PLAYER::EXIT:
-				clients.erase(port);
-				//criticalPackets.erase(port);
-				
-				for (std::map<unsigned short, PlayerInfo>::iterator it = this->clients.begin();it != clients.end();it++) {
-					SendMessage2AllClients("Un jugador se ha desconectado", it->first);
-					fillCriticalMap(key, "Critical", it->first);
-					key++;
+				if (CheckClientAndServerSalt(port, auxiliarPlayerSalt, auxiliarServerSalt)) {
 
+					clients.erase(port);
+					//criticalPackets.erase(port);
+
+					for (std::map<unsigned short, PlayerInfo>::iterator it = this->clients.begin();it != clients.end();it++) {
+						SendMessage2AllClients("Un jugador se ha desconectado", it->first);
+						fillCriticalMap(key, "Critical", it->first);
+						key++;
+
+					}
+					key = 0;
 				}
-				key = 0;
-
 				break;
 			case HEADER_PLAYER::CRITICALPACKAGE_P:
-				packet >> keyPackage;
-				manageCriticalPackets(keyPackage, port);
-				packet.clear();
-				keyPackage = -1;
-			
+				packet >> auxiliarPlayerSalt;
+				packet >> auxiliarServerSalt;
+				if(CheckClientAndServerSalt(port, auxiliarPlayerSalt, auxiliarServerSalt)) {
+					packet >> keyPackage;
+					manageCriticalPackets(keyPackage, port);
+					packet.clear();
+					keyPackage = -1;
+				}
 				break;
 
 			case HEADER_PLAYER::MOVE_P:

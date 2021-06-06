@@ -23,6 +23,7 @@ public:
 	void fillCriticalMap(int key, std::string message, unsigned short port);
 	bool IsClientInMap(unsigned short checkPort);
 	void SendMessage2AllClients(std::string message, unsigned short port);
+	bool CheckClientAndServerSalt(unsigned short puerto, int clientSalt, int serverSalt);
 	void ManageHello(sf::Packet& packet, sf::IpAddress& ip, unsigned short& port);
 	void ManageChallenge_R(sf::Packet& packet, sf::IpAddress& ip, unsigned short& port);
 	void FillEnemyOfNewPlayer(unsigned short port, sf::Vector2i position);

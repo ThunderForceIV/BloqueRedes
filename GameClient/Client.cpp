@@ -49,6 +49,8 @@ void Client::manageCriticalPackage(sf::Packet &packet) {
 	packet >> message;
 	packet.clear();
 	packet << HEADER_PLAYER::CRITICALPACKAGE_P;
+	packet << clientSalt;
+	packet << serverSalt;
 	packet << key;
 	packet << "respuesta";
 	udpSocket->udpStatus = udpSocket->Send(packet, sf::IpAddress::LocalHost, SERVER_PORT);
@@ -254,6 +256,8 @@ void Client::SendingThread() {//Envia los paquetes
 
 			if (message == "exit") {
 				packet << HEADER_PLAYER::EXIT;
+				packet << clientSalt;
+				packet << serverSalt;
 				packet << message;
 				udpSocket->udpStatus = udpSocket->Send(packet, ip, port);
 				exit(0);
